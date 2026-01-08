@@ -17,8 +17,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Claude Code Review
+      - name: Claude Code Review via OpenRouter
         uses: anthropics/anthropic-code-review-action@v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          anthropic_api_key: ${{ secrets.OPENROUTER_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          ANTHROPIC_BASE_URL: https://openrouter.ai/api/v1
