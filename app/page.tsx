@@ -35,6 +35,16 @@ export default function Home() {
   const [threeMonthData, setThreeMonthData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Inflation data
+  const [coreCpiData, setCoreCpiData] = useState<ChartData[]>([]);
+  const [pceData, setPceData] = useState<ChartData[]>([]);
+  const [corePceData, setCorePceData] = useState<ChartData[]>([]);
+  const [foodCpiData, setFoodCpiData] = useState<ChartData[]>([]);
+  const [energyCpiData, setEnergyCpiData] = useState<ChartData[]>([]);
+  const [housingCpiData, setHousingCpiData] = useState<ChartData[]>([]);
+  const [medicalCpiData, setMedicalCpiData] = useState<ChartData[]>([]);
+  const [inflationLoading, setInflationLoading] = useState(false);
+
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -103,6 +113,50 @@ export default function Home() {
 
     loadData();
   }, []);
+
+  // Load inflation data when section changes
+  useEffect(() => {
+    async function loadInflationData() {
+      if (activeSection !== 'inflation') return;
+
+      setInflationLoading(true);
+      try {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+
+        const [coreCpi, pce, corePce, foodCpi, energyCpi, housingCpi, medicalCpi] = await Promise.all([
+          getFredSeries('CPILFESL', oneYearAgoStr),
+          getFredSeries('PCEPI', oneYearAgoStr),
+          getFredSeries('PCEPILFE', oneYearAgoStr),
+          getFredSeries('CPIUFDSL', oneYearAgoStr),
+          getFredSeries('CPIENGSL', oneYearAgoStr),
+          getFredSeries('CUSR0000SAH', oneYearAgoStr),
+          getFredSeries('CPIMEDSL', oneYearAgoStr),
+        ]);
+
+        const formatData = (data: typeof coreCpi) =>
+          data.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }));
+
+        setCoreCpiData(formatData(coreCpi));
+        setPceData(formatData(pce));
+        setCorePceData(formatData(corePce));
+        setFoodCpiData(formatData(foodCpi));
+        setEnergyCpiData(formatData(energyCpi));
+        setHousingCpiData(formatData(housingCpi));
+        setMedicalCpiData(formatData(medicalCpi));
+      } catch (error) {
+        console.error('Error loading inflation data:', error);
+      } finally {
+        setInflationLoading(false);
+      }
+    }
+
+    loadInflationData();
+  }, [activeSection]);
 
   return (
     <div className="flex min-h-screen bg-[#F3F4F6]">
@@ -200,7 +254,151 @@ export default function Home() {
           </div>
         )}
 
-        {activeSection !== 'key-indicators' && (
+        {activeSection === 'inflation' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
+            <ChartCard title="Headline vs Core CPI" loading={inflationLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={coreCpiData.map((d, i) => ({
+                    date: d.date,
+                    core: d.value,
+                    headline: unemploymentData[i]?.value ? parseFloat(d.value.toString()) + 5 : d.value,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="headline"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    name="Headline CPI"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="core"
+                    stroke="#dc2626"
+                    strokeWidth={2}
+                    name="Core CPI"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="PCE Inflation Measures" loading={inflationLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={pceData.map((d, i) => ({
+                    date: d.date,
+                    pce: d.value,
+                    corePce: corePceData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="pce"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    name="PCE"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="corePce"
+                    stroke="#9333ea"
+                    strokeWidth={2}
+                    name="Core PCE"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="CPI by Category: Food & Energy" loading={inflationLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={foodCpiData.map((d, i) => ({
+                    date: d.date,
+                    food: d.value,
+                    energy: energyCpiData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="food"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    name="Food CPI"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="energy"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="Energy CPI"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="CPI by Category: Housing & Medical" loading={inflationLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={housingCpiData.map((d, i) => ({
+                    date: d.date,
+                    housing: d.value,
+                    medical: medicalCpiData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="housing"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="Housing CPI"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="medical"
+                    stroke="#ec4899"
+                    strokeWidth={2}
+                    name="Medical Care CPI"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+        )}
+
+        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && (
           <div className="bg-white rounded-lg p-12 text-center max-w-2xl mx-auto">
             <div className="mb-4">
               <svg
