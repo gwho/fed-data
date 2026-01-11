@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import Sidebar from './components/Sidebar';
+import InterestRatesSection from './components/interest-rates/InterestRatesSection';
 import { getFredSeries, FredSeriesData } from './lib/fredApi';
 
 interface ChartData {
@@ -33,6 +34,8 @@ export default function Home() {
   const [unemploymentData, setUnemploymentData] = useState<ChartData[]>([]);
   const [tenYearData, setTenYearData] = useState<ChartData[]>([]);
   const [threeMonthData, setThreeMonthData] = useState<ChartData[]>([]);
+  const [gdpData, setGdpData] = useState<ChartData[]>([]);
+  const [sp500Data, setSp500Data] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Inflation data
@@ -59,9 +62,11 @@ export default function Home() {
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
-        const [cpi, unemployment, tenYear, threeMonth] = await Promise.all([
+        const [cpi, unemployment, gdp, sp500, tenYear, threeMonth] = await Promise.all([
           getFredSeries('CPIAUCSL', fiveYearsAgoStr),
           getFredSeries('UNRATE', oneYearAgoStr),
+          getFredSeries('A191RL1Q225SBEA', oneYearAgoStr), // GDP
+          getFredSeries('SP500', oneYearAgoStr),            // S&P 500
           getFredSeries('GS10', oneYearAgoStr),
           getFredSeries('TB3MS', oneYearAgoStr),
         ]);
@@ -90,6 +95,22 @@ export default function Home() {
             value: parseFloat(d.value),
           }))
         );
+
+        // Format GDP data (quarterly, so less frequent)
+        const formattedGdp = gdp.map((d) => ({
+          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+          value: parseFloat(d.value),
+        }));
+        console.log('GDP data:', formattedGdp);
+        setGdpData(formattedGdp);
+
+        // Format S&P 500 data
+        const formattedSp500 = sp500.map((d) => ({
+          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+          value: parseFloat(d.value),
+        }));
+        console.log('S&P 500 data:', formattedSp500);
+        setSp500Data(formattedSp500);
 
         setTenYearData(
           tenYear.map((d) => ({
@@ -212,44 +233,53 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Interest Rates: Long-Term Government Bond Yields: 10-Year" loading={loading}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={tenYearData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[3.5, 5]} />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#16a34a"
-                    strokeWidth={2}
-                    name="10-Year Yield (%)"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <ChartCard title="Real GDP Growth Rate (Year-over-Year)" loading={loading}>
+              {gdpData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={gdpData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis domain={[0, 5]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#16a34a"
+                      strokeWidth={3}
+                      name="GDP Growth (%)"
+                      dot={{ r: 5 }}
+                    />
+                    <ReferenceLine y={2} stroke="#9ca3af" strokeDasharray="3 3" label="2% Trend" />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-gray-500">No data available</div>
+              )}
             </ChartCard>
 
-            <ChartCard title="Interest Rates: 3-Month or 90-Day Rates and Yields" loading={loading}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={threeMonthData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[4, 6]} />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#9333ea"
-                    strokeWidth={2}
-                    name="3-Month Rate (%)"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <ChartCard title="S&P 500 Stock Market Index" loading={loading}>
+              {sp500Data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={sp500Data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis domain={['dataMin - 200', 'dataMax + 200']} />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      name="S&P 500"
+                      dot={{ r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-gray-500">No data available</div>
+              )}
             </ChartCard>
           </div>
         )}
@@ -398,7 +428,15 @@ export default function Home() {
           </div>
         )}
 
-        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && (
+        {activeSection === 'interest-rates' && (
+          <InterestRatesSection
+            tenYearData={tenYearData}
+            threeMonthData={threeMonthData}
+            loading={loading}
+          />
+        )}
+
+        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'interest-rates' && (
           <div className="bg-white rounded-lg p-12 text-center max-w-2xl mx-auto">
             <div className="mb-4">
               <svg

@@ -212,6 +212,29 @@ function getSampleData(seriesId: string): FredSeriesData[] {
         { date: '2024-11-01', value: '575.456' },
         { date: '2024-12-01', value: '576.789' },
       ];
+    case 'A191RL1Q225SBEA': // Real GDP Growth Rate (Quarterly, Year-over-Year)
+      return [
+        { date: '2023-12-01', value: '3.1' },
+        { date: '2024-03-01', value: '3.0' },
+        { date: '2024-06-01', value: '2.9' },
+        { date: '2024-09-01', value: '2.8' },
+        { date: '2024-12-01', value: '2.5' },
+      ];
+    case 'SP500': // S&P 500 Stock Market Index
+      return [
+        { date: '2024-01-01', value: '4783.45' },
+        { date: '2024-02-01', value: '4997.91' },
+        { date: '2024-03-01', value: '5254.35' },
+        { date: '2024-04-01', value: '5035.69' },
+        { date: '2024-05-01', value: '5277.51' },
+        { date: '2024-06-01', value: '5460.48' },
+        { date: '2024-07-01', value: '5522.30' },
+        { date: '2024-08-01', value: '5648.40' },
+        { date: '2024-09-01', value: '5762.48' },
+        { date: '2024-10-01', value: '5705.45' },
+        { date: '2024-11-01', value: '5969.34' },
+        { date: '2024-12-01', value: '5881.63' },
+      ];
     default:
       return [];
   }
