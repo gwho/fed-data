@@ -16,11 +16,12 @@ const menuItems = [
   { id: 'exchange-rates', label: 'Exchange Rates', icon: Globe },
   { id: 'housing', label: 'Housing', icon: Home },
   { id: 'consumer-spending', label: 'Consumer Spending', icon: ShoppingCart },
+  { id: 'market-indices', label: 'Market Indices', icon: BarChart3 },
 ];
 
 export default function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
   return (
-    <aside className="w-[305px] bg-white border-r border-gray-200 flex flex-col h-screen fixed left-0 top-0">
+    <aside className="w-[305px] bg-slate-50 border-r border-gray-200 flex flex-col h-screen fixed left-0 top-0">
       <div className="p-5 border-b border-gray-200">
         <h1 className="text-xl font-bold text-black">FRED Indicators</h1>
         <p className="text-sm text-gray-600 mt-1">Economic Data Dashboard</p>
