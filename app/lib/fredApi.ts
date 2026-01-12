@@ -53,14 +53,11 @@ export async function getFredSeries(seriesId: string, startDate?: string): Promi
 
 function getSampleData(seriesId: string): FredSeriesData[] {
   switch (seriesId) {
-    case 'CPIAUCSL': // CPI - Last 5 years
+    case 'CPIAUCSL': // CPI - Last 3 years (modified sample values)
       return [
-        { date: '2021-01-01', value: '261.582' },
-        { date: '2022-01-01', value: '281.148' },
-        { date: '2023-01-01', value: '299.170' },
-        { date: '2024-01-01', value: '308.417' },
-        { date: '2025-01-01', value: '318.500' },
-        { date: '2026-01-01', value: '325.200' },
+        { date: '2024-01-01', value: '310.500' },
+        { date: '2025-01-01', value: '320.750' },
+        { date: '2026-01-01', value: '328.900' },
       ];
     case 'UNRATE': // Unemployment Rate
       return [
@@ -234,6 +231,119 @@ function getSampleData(seriesId: string): FredSeriesData[] {
         { date: '2024-10-01', value: '5705.45' },
         { date: '2024-11-01', value: '5969.34' },
         { date: '2024-12-01', value: '5881.63' },
+      ];
+    case 'CIVPART': // Labor Force Participation Rate
+      return [
+        { date: '2024-01-01', value: '62.5' },
+        { date: '2024-02-01', value: '62.5' },
+        { date: '2024-03-01', value: '62.7' },
+        { date: '2024-04-01', value: '62.7' },
+        { date: '2024-05-01', value: '62.5' },
+        { date: '2024-06-01', value: '62.6' },
+        { date: '2024-07-01', value: '62.7' },
+        { date: '2024-08-01', value: '62.7' },
+        { date: '2024-09-01', value: '62.7' },
+        { date: '2024-10-01', value: '62.6' },
+        { date: '2024-11-01', value: '62.5' },
+        { date: '2024-12-01', value: '62.5' },
+      ];
+    case 'PAYEMS': // Total Nonfarm Payrolls (in thousands)
+      return [
+        { date: '2024-01-01', value: '157533' },
+        { date: '2024-02-01', value: '157808' },
+        { date: '2024-03-01', value: '158098' },
+        { date: '2024-04-01', value: '158215' },
+        { date: '2024-05-01', value: '158387' },
+        { date: '2024-06-01', value: '158523' },
+        { date: '2024-07-01', value: '158632' },
+        { date: '2024-08-01', value: '158774' },
+        { date: '2024-09-01', value: '159028' },
+        { date: '2024-10-01', value: '159134' },
+        { date: '2024-11-01', value: '159361' },
+        { date: '2024-12-01', value: '159567' },
+      ];
+    case 'ICSA': // Initial Claims (Weekly Unemployment Claims)
+      return [
+        { date: '2024-01-01', value: '218000' },
+        { date: '2024-02-01', value: '212000' },
+        { date: '2024-03-01', value: '210000' },
+        { date: '2024-04-01', value: '215000' },
+        { date: '2024-05-01', value: '232000' },
+        { date: '2024-06-01', value: '238000' },
+        { date: '2024-07-01', value: '245000' },
+        { date: '2024-08-01', value: '231000' },
+        { date: '2024-09-01', value: '225000' },
+        { date: '2024-10-01', value: '228000' },
+        { date: '2024-11-01', value: '215000' },
+        { date: '2024-12-01', value: '220000' },
+      ];
+    case 'AHETPI': // Average Hourly Earnings (Private Employees)
+      return [
+        { date: '2024-01-01', value: '34.55' },
+        { date: '2024-02-01', value: '34.62' },
+        { date: '2024-03-01', value: '34.69' },
+        { date: '2024-04-01', value: '34.80' },
+        { date: '2024-05-01', value: '34.91' },
+        { date: '2024-06-01', value: '35.00' },
+        { date: '2024-07-01', value: '35.08' },
+        { date: '2024-08-01', value: '35.21' },
+        { date: '2024-09-01', value: '35.36' },
+        { date: '2024-10-01', value: '35.46' },
+        { date: '2024-11-01', value: '35.61' },
+        { date: '2024-12-01', value: '35.69' },
+      ];
+    case 'A191RP1Q027SBEA': // Nominal GDP Growth Rate (Quarterly)
+      return [
+        { date: '2023-12-01', value: '5.8' },
+        { date: '2024-03-01', value: '5.5' },
+        { date: '2024-06-01', value: '5.6' },
+        { date: '2024-09-01', value: '4.9' },
+        { date: '2024-12-01', value: '4.7' },
+      ];
+    case 'INDPRO': // Industrial Production Index (2017=100)
+      return [
+        { date: '2024-01-01', value: '102.8' },
+        { date: '2024-02-01', value: '102.6' },
+        { date: '2024-03-01', value: '102.9' },
+        { date: '2024-04-01', value: '103.1' },
+        { date: '2024-05-01', value: '103.4' },
+        { date: '2024-06-01', value: '103.2' },
+        { date: '2024-07-01', value: '103.5' },
+        { date: '2024-08-01', value: '103.3' },
+        { date: '2024-09-01', value: '103.6' },
+        { date: '2024-10-01', value: '103.8' },
+        { date: '2024-11-01', value: '103.5' },
+        { date: '2024-12-01', value: '103.9' },
+      ];
+    case 'RSAFS': // Retail Sales (Millions of Dollars)
+      return [
+        { date: '2024-01-01', value: '700234' },
+        { date: '2024-02-01', value: '698456' },
+        { date: '2024-03-01', value: '705678' },
+        { date: '2024-04-01', value: '712345' },
+        { date: '2024-05-01', value: '718901' },
+        { date: '2024-06-01', value: '721234' },
+        { date: '2024-07-01', value: '725678' },
+        { date: '2024-08-01', value: '728901' },
+        { date: '2024-09-01', value: '732456' },
+        { date: '2024-10-01', value: '738234' },
+        { date: '2024-11-01', value: '752345' },
+        { date: '2024-12-01', value: '768901' },
+      ];
+    case 'TCU': // Total Capacity Utilization (Percent)
+      return [
+        { date: '2024-01-01', value: '78.5' },
+        { date: '2024-02-01', value: '78.3' },
+        { date: '2024-03-01', value: '78.6' },
+        { date: '2024-04-01', value: '78.8' },
+        { date: '2024-05-01', value: '79.1' },
+        { date: '2024-06-01', value: '78.9' },
+        { date: '2024-07-01', value: '79.2' },
+        { date: '2024-08-01', value: '79.0' },
+        { date: '2024-09-01', value: '79.3' },
+        { date: '2024-10-01', value: '79.5' },
+        { date: '2024-11-01', value: '79.2' },
+        { date: '2024-12-01', value: '79.6' },
       ];
     default:
       return [];
