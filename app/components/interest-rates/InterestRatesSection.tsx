@@ -31,8 +31,6 @@ function ChartCard({ title, children, loading }: { title: string; children: Reac
 }
 
 export default function InterestRatesSection({ tenYearData, threeMonthData, loading }: InterestRatesSectionProps) {
-  console.log('InterestRatesSection rendering', { tenYearDataLength: tenYearData.length, threeMonthDataLength: threeMonthData.length, loading });
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
       {/* Chart 1: 10-Year Treasury */}

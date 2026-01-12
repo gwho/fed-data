@@ -48,14 +48,29 @@ export default function Home() {
   const [medicalCpiData, setMedicalCpiData] = useState<ChartData[]>([]);
   const [inflationLoading, setInflationLoading] = useState(false);
 
+  // Employment data
+  const [laborForceData, setLaborForceData] = useState<ChartData[]>([]);
+  const [payrollsData, setPayrollsData] = useState<ChartData[]>([]);
+  const [initialClaimsData, setInitialClaimsData] = useState<ChartData[]>([]);
+  const [hourlyEarningsData, setHourlyEarningsData] = useState<ChartData[]>([]);
+  const [employmentLoading, setEmploymentLoading] = useState(false);
+
+  // Economic Growth data
+  const [realGdpData, setRealGdpData] = useState<ChartData[]>([]);
+  const [nominalGdpData, setNominalGdpData] = useState<ChartData[]>([]);
+  const [industrialProdData, setIndustrialProdData] = useState<ChartData[]>([]);
+  const [retailSalesData, setRetailSalesData] = useState<ChartData[]>([]);
+  const [capacityUtilData, setCapacityUtilData] = useState<ChartData[]>([]);
+  const [economicGrowthLoading, setEconomicGrowthLoading] = useState(false);
+
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
-        // Calculate date 5 years ago from today
-        const fiveYearsAgo = new Date();
-        fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
-        const fiveYearsAgoStr = fiveYearsAgo.toISOString().split('T')[0];
+        // Calculate date 3 years ago from today (changed from 5 years)
+        const threeYearsAgo = new Date();
+        threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+        const threeYearsAgoStr = threeYearsAgo.toISOString().split('T')[0];
 
         // Calculate date 1 year ago for other metrics
         const oneYearAgo = new Date();
@@ -63,7 +78,7 @@ export default function Home() {
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
         const [cpi, unemployment, gdp, sp500, tenYear, threeMonth] = await Promise.all([
-          getFredSeries('CPIAUCSL', fiveYearsAgoStr),
+          getFredSeries('CPIAUCSL', threeYearsAgoStr),
           getFredSeries('UNRATE', oneYearAgoStr),
           getFredSeries('A191RL1Q225SBEA', oneYearAgoStr), // GDP
           getFredSeries('SP500', oneYearAgoStr),            // S&P 500
@@ -97,20 +112,20 @@ export default function Home() {
         );
 
         // Format GDP data (quarterly, so less frequent)
-        const formattedGdp = gdp.map((d) => ({
-          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-          value: parseFloat(d.value),
-        }));
-        console.log('GDP data:', formattedGdp);
-        setGdpData(formattedGdp);
+        setGdpData(
+          gdp.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+            value: parseFloat(d.value),
+          }))
+        );
 
         // Format S&P 500 data
-        const formattedSp500 = sp500.map((d) => ({
-          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-          value: parseFloat(d.value),
-        }));
-        console.log('S&P 500 data:', formattedSp500);
-        setSp500Data(formattedSp500);
+        setSp500Data(
+          sp500.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }))
+        );
 
         setTenYearData(
           tenYear.map((d) => ({
@@ -179,13 +194,103 @@ export default function Home() {
     loadInflationData();
   }, [activeSection]);
 
+  // Load employment data when section changes
+  useEffect(() => {
+    async function loadEmploymentData() {
+      if (activeSection !== 'employment') return;
+
+      setEmploymentLoading(true);
+      try {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+
+        const [laborForce, payrolls, initialClaims, hourlyEarnings] = await Promise.all([
+          getFredSeries('CIVPART', oneYearAgoStr),
+          getFredSeries('PAYEMS', oneYearAgoStr),
+          getFredSeries('ICSA', oneYearAgoStr),
+          getFredSeries('AHETPI', oneYearAgoStr),
+        ]);
+
+        const formatData = (data: typeof laborForce) =>
+          data.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }));
+
+        setLaborForceData(formatData(laborForce));
+        setPayrollsData(formatData(payrolls));
+        setInitialClaimsData(formatData(initialClaims));
+        setHourlyEarningsData(formatData(hourlyEarnings));
+      } catch (error) {
+        console.error('Error loading employment data:', error);
+      } finally {
+        setEmploymentLoading(false);
+      }
+    }
+
+    loadEmploymentData();
+  }, [activeSection]);
+
+  // Load economic growth data when section changes
+  useEffect(() => {
+    async function loadEconomicGrowthData() {
+      if (activeSection !== 'economic-growth') return;
+
+      setEconomicGrowthLoading(true);
+      try {
+        const twoYearsAgo = new Date();
+        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+        const twoYearsAgoStr = twoYearsAgo.toISOString().split('T')[0];
+
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+
+        const [realGdp, nominalGdp, industrialProd, retailSales, capacityUtil] = await Promise.all([
+          getFredSeries('A191RL1Q225SBEA', twoYearsAgoStr),
+          getFredSeries('A191RP1Q027SBEA', twoYearsAgoStr),
+          getFredSeries('INDPRO', oneYearAgoStr),
+          getFredSeries('RSAFS', oneYearAgoStr),
+          getFredSeries('TCU', oneYearAgoStr),
+        ]);
+
+        // Format quarterly GDP data
+        const formatQuarterlyData = (data: typeof realGdp) =>
+          data.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+            value: parseFloat(d.value),
+          }));
+
+        // Format monthly data
+        const formatMonthlyData = (data: typeof industrialProd) =>
+          data.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }));
+
+        setRealGdpData(formatQuarterlyData(realGdp));
+        setNominalGdpData(formatQuarterlyData(nominalGdp));
+        setIndustrialProdData(formatMonthlyData(industrialProd));
+        setRetailSalesData(formatMonthlyData(retailSales));
+        setCapacityUtilData(formatMonthlyData(capacityUtil));
+      } catch (error) {
+        console.error('Error loading economic growth data:', error);
+      } finally {
+        setEconomicGrowthLoading(false);
+      }
+    }
+
+    loadEconomicGrowthData();
+  }, [activeSection]);
+
   return (
     <div className="flex min-h-screen bg-[#F3F4F6]">
       <Sidebar activeSection={activeSection} onSectionChange={setActiveSection} />
 
       <main className="ml-[305px] flex-1 p-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-black mb-2">Economic Indicators Dashboard</h1>
+          <h1 className="text-4xl font-bold text-black mb-2">Federal Reserve Analytics Hub</h1>
           <p className="text-gray-600">
             Real-time economic data from the Federal Reserve Economic Data (FRED) system
           </p>
@@ -193,7 +298,7 @@ export default function Home() {
 
         {activeSection === 'key-indicators' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="CPI - last five years" loading={loading}>
+            <ChartCard title="CPI - last three years" loading={loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={cpiData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -204,7 +309,7 @@ export default function Home() {
                   <Line
                     type="monotone"
                     dataKey="value"
-                    stroke="#2563eb"
+                    stroke="#0d9488"
                     strokeWidth={2}
                     name="CPI Index"
                     dot={{ r: 4 }}
@@ -224,7 +329,7 @@ export default function Home() {
                   <Line
                     type="monotone"
                     dataKey="value"
-                    stroke="#dc2626"
+                    stroke="#f59e0b"
                     strokeWidth={2}
                     name="Unemployment Rate (%)"
                     dot={{ r: 4 }}
@@ -428,6 +533,214 @@ export default function Home() {
           </div>
         )}
 
+        {activeSection === 'employment' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
+            <ChartCard title="Unemployment Rate vs Labor Force Participation" loading={employmentLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={unemploymentData.map((d, i) => ({
+                    date: d.date,
+                    unemployment: d.value,
+                    participation: laborForceData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis yAxisId="left" domain={[3, 5]} />
+                  <YAxis yAxisId="right" orientation="right" domain={[60, 65]} />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="unemployment"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    name="Unemployment Rate (%)"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="participation"
+                    stroke="#0d9488"
+                    strokeWidth={2}
+                    name="Labor Force Participation (%)"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Total Nonfarm Payrolls" loading={employmentLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={payrollsData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={['dataMin - 500', 'dataMax + 500']} tickFormatter={(v) => `${(v/1000).toFixed(1)}M`} />
+                  <Tooltip formatter={(value) => value !== undefined ? `${(Number(value)/1000).toFixed(2)}M` : ''} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="Total Payrolls"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Initial Unemployment Claims (Weekly)" loading={employmentLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={initialClaimsData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={['dataMin - 10000', 'dataMax + 10000']} tickFormatter={(v) => `${(v/1000).toFixed(0)}K`} />
+                  <Tooltip formatter={(value) => value !== undefined ? `${(Number(value)/1000).toFixed(0)}K` : ''} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="Initial Claims"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Average Hourly Earnings (Private Sector)" loading={employmentLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={hourlyEarningsData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={['dataMin - 0.5', 'dataMax + 0.5']} tickFormatter={(v) => `$${v.toFixed(2)}`} />
+                  <Tooltip formatter={(value) => value !== undefined ? `$${Number(value).toFixed(2)}` : ''} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    name="Hourly Earnings"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+        )}
+
+        {activeSection === 'economic-growth' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
+            <ChartCard title="Real vs Nominal GDP Growth Rate" loading={economicGrowthLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={realGdpData.map((d, i) => ({
+                    date: d.date,
+                    real: d.value,
+                    nominal: nominalGdpData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[0, 8]} />
+                  <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
+                  <Legend />
+                  <ReferenceLine y={2} stroke="#9ca3af" strokeDasharray="3 3" label="2% Target" />
+                  <Line
+                    type="monotone"
+                    dataKey="real"
+                    stroke="#16a34a"
+                    strokeWidth={3}
+                    name="Real GDP Growth (%)"
+                    dot={{ r: 5 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="nominal"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="Nominal GDP Growth (%)"
+                    dot={{ r: 4 }}
+                    strokeDasharray="5 5"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Industrial Production Index" loading={economicGrowthLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={industrialProdData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
+                  <Tooltip formatter={(value) => `${Number(value).toFixed(1)}`} />
+                  <Legend />
+                  <ReferenceLine y={100} stroke="#9ca3af" strokeDasharray="3 3" label="2017 Base" />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    name="Industrial Production (2017=100)"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Advance Monthly Retail Sales" loading={economicGrowthLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={retailSalesData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis 
+                    domain={['dataMin - 10000', 'dataMax + 10000']} 
+                    tickFormatter={(v) => `$${(v/1000).toFixed(0)}B`} 
+                  />
+                  <Tooltip formatter={(value) => value !== undefined ? `$${(Number(value)/1000).toFixed(1)}B` : ''} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="Retail Sales"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Total Capacity Utilization" loading={economicGrowthLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={capacityUtilData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[75, 85]} />
+                  <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
+                  <Legend />
+                  <ReferenceLine y={80} stroke="#ef4444" strokeDasharray="3 3" label="80% Threshold" />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#0d9488"
+                    strokeWidth={2}
+                    name="Capacity Utilization (%)"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+        )}
+
         {activeSection === 'interest-rates' && (
           <InterestRatesSection
             tenYearData={tenYearData}
@@ -436,7 +749,7 @@ export default function Home() {
           />
         )}
 
-        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'interest-rates' && (
+        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'interest-rates' && (
           <div className="bg-white rounded-lg p-12 text-center max-w-2xl mx-auto">
             <div className="mb-4">
               <svg
