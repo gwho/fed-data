@@ -107,6 +107,134 @@ function getSampleData(seriesId: string): FredSeriesData[] {
         { date: '2024-11-01', value: '4.38' },
         { date: '2024-12-01', value: '4.32' },
       ];
+    case 'CPILFESL': // Core CPI (excludes food & energy)
+      return [
+        { date: '2024-01-01', value: '310.326' },
+        { date: '2024-02-01', value: '311.054' },
+        { date: '2024-03-01', value: '312.230' },
+        { date: '2024-04-01', value: '312.877' },
+        { date: '2024-05-01', value: '313.231' },
+        { date: '2024-06-01', value: '313.534' },
+        { date: '2024-07-01', value: '314.464' },
+        { date: '2024-08-01', value: '315.097' },
+        { date: '2024-09-01', value: '315.709' },
+        { date: '2024-10-01', value: '316.315' },
+        { date: '2024-11-01', value: '316.836' },
+        { date: '2024-12-01', value: '317.228' },
+      ];
+    case 'PCEPI': // Personal Consumption Expenditures Price Index
+      return [
+        { date: '2024-01-01', value: '124.418' },
+        { date: '2024-02-01', value: '124.852' },
+        { date: '2024-03-01', value: '125.389' },
+        { date: '2024-04-01', value: '125.753' },
+        { date: '2024-05-01', value: '125.923' },
+        { date: '2024-06-01', value: '126.003' },
+        { date: '2024-07-01', value: '126.346' },
+        { date: '2024-08-01', value: '126.528' },
+        { date: '2024-09-01', value: '126.720' },
+        { date: '2024-10-01', value: '127.064' },
+        { date: '2024-11-01', value: '127.312' },
+        { date: '2024-12-01', value: '127.589' },
+      ];
+    case 'PCEPILFE': // Core PCE (Fed's preferred measure)
+      return [
+        { date: '2024-01-01', value: '124.001' },
+        { date: '2024-02-01', value: '124.391' },
+        { date: '2024-03-01', value: '124.730' },
+        { date: '2024-04-01', value: '125.011' },
+        { date: '2024-05-01', value: '125.186' },
+        { date: '2024-06-01', value: '125.341' },
+        { date: '2024-07-01', value: '125.565' },
+        { date: '2024-08-01', value: '125.764' },
+        { date: '2024-09-01', value: '125.959' },
+        { date: '2024-10-01', value: '126.208' },
+        { date: '2024-11-01', value: '126.424' },
+        { date: '2024-12-01', value: '126.648' },
+      ];
+    case 'CPIUFDSL': // Food CPI
+      return [
+        { date: '2024-01-01', value: '308.654' },
+        { date: '2024-02-01', value: '309.287' },
+        { date: '2024-03-01', value: '309.823' },
+        { date: '2024-04-01', value: '310.451' },
+        { date: '2024-05-01', value: '311.123' },
+        { date: '2024-06-01', value: '311.534' },
+        { date: '2024-07-01', value: '312.098' },
+        { date: '2024-08-01', value: '312.234' },
+        { date: '2024-09-01', value: '312.678' },
+        { date: '2024-10-01', value: '313.045' },
+        { date: '2024-11-01', value: '313.412' },
+        { date: '2024-12-01', value: '313.789' },
+      ];
+    case 'CPIENGSL': // Energy CPI
+      return [
+        { date: '2024-01-01', value: '285.342' },
+        { date: '2024-02-01', value: '287.123' },
+        { date: '2024-03-01', value: '292.456' },
+        { date: '2024-04-01', value: '295.789' },
+        { date: '2024-05-01', value: '298.234' },
+        { date: '2024-06-01', value: '294.567' },
+        { date: '2024-07-01', value: '291.234' },
+        { date: '2024-08-01', value: '288.456' },
+        { date: '2024-09-01', value: '285.789' },
+        { date: '2024-10-01', value: '287.123' },
+        { date: '2024-11-01', value: '289.456' },
+        { date: '2024-12-01', value: '291.789' },
+      ];
+    case 'CUSR0000SAH': // Housing CPI
+      return [
+        { date: '2024-01-01', value: '340.234' },
+        { date: '2024-02-01', value: '341.123' },
+        { date: '2024-03-01', value: '342.456' },
+        { date: '2024-04-01', value: '343.234' },
+        { date: '2024-05-01', value: '344.567' },
+        { date: '2024-06-01', value: '345.234' },
+        { date: '2024-07-01', value: '346.123' },
+        { date: '2024-08-01', value: '347.456' },
+        { date: '2024-09-01', value: '348.234' },
+        { date: '2024-10-01', value: '349.123' },
+        { date: '2024-11-01', value: '350.234' },
+        { date: '2024-12-01', value: '351.123' },
+      ];
+    case 'CPIMEDSL': // Medical Care CPI
+      return [
+        { date: '2024-01-01', value: '565.234' },
+        { date: '2024-02-01', value: '566.456' },
+        { date: '2024-03-01', value: '567.789' },
+        { date: '2024-04-01', value: '568.234' },
+        { date: '2024-05-01', value: '569.567' },
+        { date: '2024-06-01', value: '570.123' },
+        { date: '2024-07-01', value: '571.456' },
+        { date: '2024-08-01', value: '572.234' },
+        { date: '2024-09-01', value: '573.567' },
+        { date: '2024-10-01', value: '574.123' },
+        { date: '2024-11-01', value: '575.456' },
+        { date: '2024-12-01', value: '576.789' },
+      ];
+    case 'A191RL1Q225SBEA': // Real GDP Growth Rate (Quarterly, Year-over-Year)
+      return [
+        { date: '2023-12-01', value: '3.1' },
+        { date: '2024-03-01', value: '3.0' },
+        { date: '2024-06-01', value: '2.9' },
+        { date: '2024-09-01', value: '2.8' },
+        { date: '2024-12-01', value: '2.5' },
+      ];
+    case 'SP500': // S&P 500 Stock Market Index
+      return [
+        { date: '2024-01-01', value: '4783.45' },
+        { date: '2024-02-01', value: '4997.91' },
+        { date: '2024-03-01', value: '5254.35' },
+        { date: '2024-04-01', value: '5035.69' },
+        { date: '2024-05-01', value: '5277.51' },
+        { date: '2024-06-01', value: '5460.48' },
+        { date: '2024-07-01', value: '5522.30' },
+        { date: '2024-08-01', value: '5648.40' },
+        { date: '2024-09-01', value: '5762.48' },
+        { date: '2024-10-01', value: '5705.45' },
+        { date: '2024-11-01', value: '5969.34' },
+        { date: '2024-12-01', value: '5881.63' },
+      ];
     default:
       return [];
   }

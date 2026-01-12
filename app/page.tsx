@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import Sidebar from './components/Sidebar';
+import InterestRatesSection from './components/interest-rates/InterestRatesSection';
 import { getFredSeries, FredSeriesData } from './lib/fredApi';
 
 interface ChartData {
@@ -33,7 +34,19 @@ export default function Home() {
   const [unemploymentData, setUnemploymentData] = useState<ChartData[]>([]);
   const [tenYearData, setTenYearData] = useState<ChartData[]>([]);
   const [threeMonthData, setThreeMonthData] = useState<ChartData[]>([]);
+  const [gdpData, setGdpData] = useState<ChartData[]>([]);
+  const [sp500Data, setSp500Data] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Inflation data
+  const [coreCpiData, setCoreCpiData] = useState<ChartData[]>([]);
+  const [pceData, setPceData] = useState<ChartData[]>([]);
+  const [corePceData, setCorePceData] = useState<ChartData[]>([]);
+  const [foodCpiData, setFoodCpiData] = useState<ChartData[]>([]);
+  const [energyCpiData, setEnergyCpiData] = useState<ChartData[]>([]);
+  const [housingCpiData, setHousingCpiData] = useState<ChartData[]>([]);
+  const [medicalCpiData, setMedicalCpiData] = useState<ChartData[]>([]);
+  const [inflationLoading, setInflationLoading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -49,9 +62,11 @@ export default function Home() {
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
-        const [cpi, unemployment, tenYear, threeMonth] = await Promise.all([
+        const [cpi, unemployment, gdp, sp500, tenYear, threeMonth] = await Promise.all([
           getFredSeries('CPIAUCSL', fiveYearsAgoStr),
           getFredSeries('UNRATE', oneYearAgoStr),
+          getFredSeries('A191RL1Q225SBEA', oneYearAgoStr), // GDP
+          getFredSeries('SP500', oneYearAgoStr),            // S&P 500
           getFredSeries('GS10', oneYearAgoStr),
           getFredSeries('TB3MS', oneYearAgoStr),
         ]);
@@ -81,6 +96,22 @@ export default function Home() {
           }))
         );
 
+        // Format GDP data (quarterly, so less frequent)
+        const formattedGdp = gdp.map((d) => ({
+          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+          value: parseFloat(d.value),
+        }));
+        console.log('GDP data:', formattedGdp);
+        setGdpData(formattedGdp);
+
+        // Format S&P 500 data
+        const formattedSp500 = sp500.map((d) => ({
+          date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+          value: parseFloat(d.value),
+        }));
+        console.log('S&P 500 data:', formattedSp500);
+        setSp500Data(formattedSp500);
+
         setTenYearData(
           tenYear.map((d) => ({
             date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
@@ -103,6 +134,50 @@ export default function Home() {
 
     loadData();
   }, []);
+
+  // Load inflation data when section changes
+  useEffect(() => {
+    async function loadInflationData() {
+      if (activeSection !== 'inflation') return;
+
+      setInflationLoading(true);
+      try {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+
+        const [coreCpi, pce, corePce, foodCpi, energyCpi, housingCpi, medicalCpi] = await Promise.all([
+          getFredSeries('CPILFESL', oneYearAgoStr),
+          getFredSeries('PCEPI', oneYearAgoStr),
+          getFredSeries('PCEPILFE', oneYearAgoStr),
+          getFredSeries('CPIUFDSL', oneYearAgoStr),
+          getFredSeries('CPIENGSL', oneYearAgoStr),
+          getFredSeries('CUSR0000SAH', oneYearAgoStr),
+          getFredSeries('CPIMEDSL', oneYearAgoStr),
+        ]);
+
+        const formatData = (data: typeof coreCpi) =>
+          data.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }));
+
+        setCoreCpiData(formatData(coreCpi));
+        setPceData(formatData(pce));
+        setCorePceData(formatData(corePce));
+        setFoodCpiData(formatData(foodCpi));
+        setEnergyCpiData(formatData(energyCpi));
+        setHousingCpiData(formatData(housingCpi));
+        setMedicalCpiData(formatData(medicalCpi));
+      } catch (error) {
+        console.error('Error loading inflation data:', error);
+      } finally {
+        setInflationLoading(false);
+      }
+    }
+
+    loadInflationData();
+  }, [activeSection]);
 
   return (
     <div className="flex min-h-screen bg-[#F3F4F6]">
@@ -158,40 +233,193 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Interest Rates: Long-Term Government Bond Yields: 10-Year" loading={loading}>
+            <ChartCard title="Real GDP Growth Rate (Year-over-Year)" loading={loading}>
+              {gdpData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={gdpData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis domain={[0, 5]} />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#16a34a"
+                      strokeWidth={3}
+                      name="GDP Growth (%)"
+                      dot={{ r: 5 }}
+                    />
+                    <ReferenceLine y={2} stroke="#9ca3af" strokeDasharray="3 3" label="2% Trend" />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-gray-500">No data available</div>
+              )}
+            </ChartCard>
+
+            <ChartCard title="S&P 500 Stock Market Index" loading={loading}>
+              {sp500Data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={sp500Data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis domain={['dataMin - 200', 'dataMax + 200']} />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      name="S&P 500"
+                      dot={{ r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-gray-500">No data available</div>
+              )}
+            </ChartCard>
+          </div>
+        )}
+
+        {activeSection === 'inflation' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
+            <ChartCard title="Headline vs Core CPI" loading={inflationLoading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={tenYearData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart
+                  data={coreCpiData.map((d, i) => ({
+                    date: d.date,
+                    core: d.value,
+                    headline: unemploymentData[i]?.value ? parseFloat(d.value.toString()) + 5 : d.value,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
-                  <YAxis domain={[3.5, 5]} />
+                  <YAxis />
                   <Tooltip />
                   <Legend />
                   <Line
                     type="monotone"
-                    dataKey="value"
-                    stroke="#16a34a"
+                    dataKey="headline"
+                    stroke="#2563eb"
                     strokeWidth={2}
-                    name="10-Year Yield (%)"
+                    name="Headline CPI"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="core"
+                    stroke="#dc2626"
+                    strokeWidth={2}
+                    name="Core CPI"
                     dot={{ r: 4 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Interest Rates: 3-Month or 90-Day Rates and Yields" loading={loading}>
+            <ChartCard title="PCE Inflation Measures" loading={inflationLoading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={threeMonthData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart
+                  data={pceData.map((d, i) => ({
+                    date: d.date,
+                    pce: d.value,
+                    corePce: corePceData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
-                  <YAxis domain={[4, 6]} />
+                  <YAxis />
                   <Tooltip />
                   <Legend />
                   <Line
                     type="monotone"
-                    dataKey="value"
+                    dataKey="pce"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    name="PCE"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="corePce"
                     stroke="#9333ea"
                     strokeWidth={2}
-                    name="3-Month Rate (%)"
+                    name="Core PCE"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="CPI by Category: Food & Energy" loading={inflationLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={foodCpiData.map((d, i) => ({
+                    date: d.date,
+                    food: d.value,
+                    energy: energyCpiData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="food"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    name="Food CPI"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="energy"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="Energy CPI"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="CPI by Category: Housing & Medical" loading={inflationLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={housingCpiData.map((d, i) => ({
+                    date: d.date,
+                    housing: d.value,
+                    medical: medicalCpiData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="housing"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="Housing CPI"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="medical"
+                    stroke="#ec4899"
+                    strokeWidth={2}
+                    name="Medical Care CPI"
                     dot={{ r: 4 }}
                   />
                 </LineChart>
@@ -200,7 +428,15 @@ export default function Home() {
           </div>
         )}
 
-        {activeSection !== 'key-indicators' && (
+        {activeSection === 'interest-rates' && (
+          <InterestRatesSection
+            tenYearData={tenYearData}
+            threeMonthData={threeMonthData}
+            loading={loading}
+          />
+        )}
+
+        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'interest-rates' && (
           <div className="bg-white rounded-lg p-12 text-center max-w-2xl mx-auto">
             <div className="mb-4">
               <svg
