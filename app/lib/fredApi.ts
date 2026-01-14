@@ -345,6 +345,141 @@ function getSampleData(seriesId: string): FredSeriesData[] {
         { date: '2024-11-01', value: '79.2' },
         { date: '2024-12-01', value: '79.6' },
       ];
+    case 'DTWEXBGS': // Trade Weighted U.S. Dollar Index: Broad, Goods and Services
+      return [
+        { date: '2024-01-01', value: '122.45' },
+        { date: '2024-02-01', value: '123.12' },
+        { date: '2024-03-01', value: '122.89' },
+        { date: '2024-04-01', value: '123.67' },
+        { date: '2024-05-01', value: '124.23' },
+        { date: '2024-06-01', value: '123.98' },
+        { date: '2024-07-01', value: '124.56' },
+        { date: '2024-08-01', value: '123.34' },
+        { date: '2024-09-01', value: '122.78' },
+        { date: '2024-10-01', value: '123.45' },
+        { date: '2024-11-01', value: '124.89' },
+        { date: '2024-12-01', value: '125.23' },
+      ];
+    case 'DEXUSEU': // U.S. Dollars to Euro Spot Exchange Rate
+      return [
+        { date: '2024-01-01', value: '0.9123' },
+        { date: '2024-02-01', value: '0.9245' },
+        { date: '2024-03-01', value: '0.9189' },
+        { date: '2024-04-01', value: '0.9334' },
+        { date: '2024-05-01', value: '0.9456' },
+        { date: '2024-06-01', value: '0.9378' },
+        { date: '2024-07-01', value: '0.9512' },
+        { date: '2024-08-01', value: '0.9289' },
+        { date: '2024-09-01', value: '0.9156' },
+        { date: '2024-10-01', value: '0.9234' },
+        { date: '2024-11-01', value: '0.9445' },
+        { date: '2024-12-01', value: '0.9523' },
+      ];
+    case 'DEXUSUK': // U.S. Dollars to British Pound Spot Exchange Rate
+      return [
+        { date: '2024-01-01', value: '0.7856' },
+        { date: '2024-02-01', value: '0.7923' },
+        { date: '2024-03-01', value: '0.7889' },
+        { date: '2024-04-01', value: '0.7967' },
+        { date: '2024-05-01', value: '0.8012' },
+        { date: '2024-06-01', value: '0.7945' },
+        { date: '2024-07-01', value: '0.8034' },
+        { date: '2024-08-01', value: '0.7878' },
+        { date: '2024-09-01', value: '0.7823' },
+        { date: '2024-10-01', value: '0.7901' },
+        { date: '2024-11-01', value: '0.8023' },
+        { date: '2024-12-01', value: '0.8067' },
+      ];
+    case 'DEXJPUS': // Japanese Yen to U.S. Dollar Spot Exchange Rate
+      return [
+        { date: '2024-01-01', value: '142.35' },
+        { date: '2024-02-01', value: '148.67' },
+        { date: '2024-03-01', value: '151.23' },
+        { date: '2024-04-01', value: '154.89' },
+        { date: '2024-05-01', value: '156.12' },
+        { date: '2024-06-01', value: '160.45' },
+        { date: '2024-07-01', value: '157.89' },
+        { date: '2024-08-01', value: '145.67' },
+        { date: '2024-09-01', value: '143.23' },
+        { date: '2024-10-01', value: '149.78' },
+        { date: '2024-11-01', value: '152.34' },
+        { date: '2024-12-01', value: '154.12' },
+      ];
+    case 'DEXCHUS': // Chinese Yuan to U.S. Dollar Spot Exchange Rate
+      return [
+        { date: '2024-01-01', value: '7.1234' },
+        { date: '2024-02-01', value: '7.1456' },
+        { date: '2024-03-01', value: '7.1789' },
+        { date: '2024-04-01', value: '7.2123' },
+        { date: '2024-05-01', value: '7.2345' },
+        { date: '2024-06-01', value: '7.2567' },
+        { date: '2024-07-01', value: '7.2789' },
+        { date: '2024-08-01', value: '7.2456' },
+        { date: '2024-09-01', value: '7.2123' },
+        { date: '2024-10-01', value: '7.1989' },
+        { date: '2024-11-01', value: '7.2234' },
+        { date: '2024-12-01', value: '7.2456' },
+      ];
+    case 'DEXMXUS': // Mexican Peso to U.S. Dollar Spot Exchange Rate
+      return [
+        { date: '2024-01-01', value: '17.12' },
+        { date: '2024-02-01', value: '17.34' },
+        { date: '2024-03-01', value: '16.89' },
+        { date: '2024-04-01', value: '16.67' },
+        { date: '2024-05-01', value: '16.45' },
+        { date: '2024-06-01', value: '18.23' },
+        { date: '2024-07-01', value: '18.56' },
+        { date: '2024-08-01', value: '19.12' },
+        { date: '2024-09-01', value: '19.45' },
+        { date: '2024-10-01', value: '19.89' },
+        { date: '2024-11-01', value: '20.12' },
+        { date: '2024-12-01', value: '20.34' },
+      ];
+    case 'DEXINUS': // Indian Rupee to U.S. Dollar Spot Exchange Rate
+      return [
+        { date: '2024-01-01', value: '83.12' },
+        { date: '2024-02-01', value: '83.34' },
+        { date: '2024-03-01', value: '83.45' },
+        { date: '2024-04-01', value: '83.67' },
+        { date: '2024-05-01', value: '83.89' },
+        { date: '2024-06-01', value: '83.56' },
+        { date: '2024-07-01', value: '83.78' },
+        { date: '2024-08-01', value: '83.91' },
+        { date: '2024-09-01', value: '83.67' },
+        { date: '2024-10-01', value: '83.45' },
+        { date: '2024-11-01', value: '84.12' },
+        { date: '2024-12-01', value: '84.23' },
+      ];
+    case 'DEXCAUS': // Canadian Dollar to U.S. Dollar Spot Exchange Rate
+      return [
+        { date: '2024-01-01', value: '1.3234' },
+        { date: '2024-02-01', value: '1.3456' },
+        { date: '2024-03-01', value: '1.3567' },
+        { date: '2024-04-01', value: '1.3689' },
+        { date: '2024-05-01', value: '1.3712' },
+        { date: '2024-06-01', value: '1.3645' },
+        { date: '2024-07-01', value: '1.3723' },
+        { date: '2024-08-01', value: '1.3534' },
+        { date: '2024-09-01', value: '1.3456' },
+        { date: '2024-10-01', value: '1.3578' },
+        { date: '2024-11-01', value: '1.3689' },
+        { date: '2024-12-01', value: '1.3734' },
+      ];
+    case 'DEXUSAL': // Australian Dollar to U.S. Dollar Spot Exchange Rate
+      return [
+        { date: '2024-01-01', value: '1.4823' },
+        { date: '2024-02-01', value: '1.5234' },
+        { date: '2024-03-01', value: '1.5456' },
+        { date: '2024-04-01', value: '1.5678' },
+        { date: '2024-05-01', value: '1.5523' },
+        { date: '2024-06-01', value: '1.5345' },
+        { date: '2024-07-01', value: '1.5167' },
+        { date: '2024-08-01', value: '1.4923' },
+        { date: '2024-09-01', value: '1.4756' },
+        { date: '2024-10-01', value: '1.4934' },
+        { date: '2024-11-01', value: '1.5123' },
+        { date: '2024-12-01', value: '1.5289' },
+      ];
     default:
       return [];
   }

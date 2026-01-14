@@ -63,6 +63,18 @@ export default function Home() {
   const [capacityUtilData, setCapacityUtilData] = useState<ChartData[]>([]);
   const [economicGrowthLoading, setEconomicGrowthLoading] = useState(false);
 
+  // Exchange Rates data
+  const [dollarIndexData, setDollarIndexData] = useState<ChartData[]>([]);
+  const [eurData, setEurData] = useState<ChartData[]>([]);
+  const [gbpData, setGbpData] = useState<ChartData[]>([]);
+  const [jpyData, setJpyData] = useState<ChartData[]>([]);
+  const [cnyData, setCnyData] = useState<ChartData[]>([]);
+  const [mxnData, setMxnData] = useState<ChartData[]>([]);
+  const [inrData, setInrData] = useState<ChartData[]>([]);
+  const [cadData, setCadData] = useState<ChartData[]>([]);
+  const [audData, setAudData] = useState<ChartData[]>([]);
+  const [exchangeRatesLoading, setExchangeRatesLoading] = useState(false);
+
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -282,6 +294,54 @@ export default function Home() {
     }
 
     loadEconomicGrowthData();
+  }, [activeSection]);
+
+  // Load exchange rates data when section changes
+  useEffect(() => {
+    async function loadExchangeRatesData() {
+      if (activeSection !== 'exchange-rates') return;
+
+      setExchangeRatesLoading(true);
+      try {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+
+        const [dollarIndex, eur, gbp, jpy, cny, mxn, inr, cad, aud] = await Promise.all([
+          getFredSeries('DTWEXBGS', oneYearAgoStr),
+          getFredSeries('DEXUSEU', oneYearAgoStr),
+          getFredSeries('DEXUSUK', oneYearAgoStr),
+          getFredSeries('DEXJPUS', oneYearAgoStr),
+          getFredSeries('DEXCHUS', oneYearAgoStr),
+          getFredSeries('DEXMXUS', oneYearAgoStr),
+          getFredSeries('DEXINUS', oneYearAgoStr),
+          getFredSeries('DEXCAUS', oneYearAgoStr),
+          getFredSeries('DEXUSAL', oneYearAgoStr),
+        ]);
+
+        const formatData = (data: typeof dollarIndex) =>
+          data.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }));
+
+        setDollarIndexData(formatData(dollarIndex));
+        setEurData(formatData(eur));
+        setGbpData(formatData(gbp));
+        setJpyData(formatData(jpy));
+        setCnyData(formatData(cny));
+        setMxnData(formatData(mxn));
+        setInrData(formatData(inr));
+        setCadData(formatData(cad));
+        setAudData(formatData(aud));
+      } catch (error) {
+        console.error('Error loading exchange rates data:', error);
+      } finally {
+        setExchangeRatesLoading(false);
+      }
+    }
+
+    loadExchangeRatesData();
   }, [activeSection]);
 
   return (
@@ -741,6 +801,184 @@ export default function Home() {
           </div>
         )}
 
+        {activeSection === 'exchange-rates' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
+            <ChartCard title="Trade-Weighted U.S. Dollar Index (Broad)" loading={exchangeRatesLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={dollarIndexData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={['dataMin - 2', 'dataMax + 2']} />
+                  <Tooltip formatter={(value) => `${Number(value).toFixed(2)}`} />
+                  <Legend />
+                  <ReferenceLine 
+                    y={120} 
+                    stroke="#9ca3af" 
+                    strokeDasharray="3 3" 
+                    label="Historical Average" 
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    name="Dollar Index"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Major Currency Pairs vs USD" loading={exchangeRatesLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={eurData.map((d, i) => ({
+                    date: d.date,
+                    eur: d.value,
+                    gbp: gbpData[i]?.value || 0,
+                    jpy: jpyData[i]?.value ? jpyData[i].value / 100 : 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis yAxisId="left" domain={[0.7, 1.0]} />
+                  <YAxis yAxisId="right" orientation="right" domain={[1.3, 1.7]} />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      if (name === 'JPY/USD (÷100)') {
+                        return `¥${(Number(value) * 100).toFixed(2)}`;
+                      }
+                      return `$${Number(value).toFixed(4)}`;
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="eur"
+                    stroke="#0ea5e9"
+                    strokeWidth={2}
+                    name="EUR/USD"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="gbp"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    name="GBP/USD"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="jpy"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="JPY/USD (÷100)"
+                    dot={{ r: 4 }}
+                    strokeDasharray="5 5"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Emerging Market Currencies vs USD" loading={exchangeRatesLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={cnyData.map((d, i) => ({
+                    date: d.date,
+                    cny: d.value,
+                    mxn: mxnData[i]?.value || 0,
+                    inr: inrData[i]?.value ? inrData[i].value / 10 : 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis yAxisId="left" domain={[6, 22]} label={{ value: 'CNY, MXN', angle: -90, position: 'insideLeft' }} />
+                  <YAxis yAxisId="right" orientation="right" domain={[7, 10]} label={{ value: 'INR (÷10)', angle: 90, position: 'insideRight' }} />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      if (name === 'CNY/USD') return `¥${Number(value).toFixed(2)}`;
+                      if (name === 'MXN/USD') return `$${Number(value).toFixed(2)}`;
+                      if (name === 'INR/USD (÷10)') return `₹${(Number(value) * 10).toFixed(2)}`;
+                      return Number(value).toFixed(2);
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="cny"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    name="CNY/USD"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="mxn"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    name="MXN/USD"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="inr"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    name="INR/USD (÷10)"
+                    dot={{ r: 4 }}
+                    strokeDasharray="5 5"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Commodity Currencies vs USD" loading={exchangeRatesLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={cadData.map((d, i) => ({
+                    date: d.date,
+                    cad: d.value,
+                    aud: audData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[1.2, 1.7]} />
+                  <Tooltip formatter={(value) => `$${Number(value).toFixed(4)}`} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="cad"
+                    stroke="#dc2626"
+                    strokeWidth={2}
+                    name="CAD/USD"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="aud"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    name="AUD/USD"
+                    dot={{ r: 4 }}
+                  />
+                  <ReferenceLine y={1.35} stroke="#9ca3af" strokeDasharray="3 3" label="Parity Zone" />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+        )}
+
         {activeSection === 'interest-rates' && (
           <InterestRatesSection
             tenYearData={tenYearData}
@@ -749,7 +987,7 @@ export default function Home() {
           />
         )}
 
-        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'interest-rates' && (
+        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'exchange-rates' && activeSection !== 'interest-rates' && (
           <div className="bg-white rounded-lg p-12 text-center max-w-2xl mx-auto">
             <div className="mb-4">
               <svg
