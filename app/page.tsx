@@ -63,6 +63,16 @@ export default function Home() {
   const [capacityUtilData, setCapacityUtilData] = useState<ChartData[]>([]);
   const [economicGrowthLoading, setEconomicGrowthLoading] = useState(false);
 
+  // Housing data
+  const [homePriceData, setHomePriceData] = useState<ChartData[]>([]);
+  const [housingStartsData, setHousingStartsData] = useState<ChartData[]>([]);
+  const [buildingPermitsData, setBuildingPermitsData] = useState<ChartData[]>([]);
+  const [mortgageRateData, setMortgageRateData] = useState<ChartData[]>([]);
+  const [affordabilityData, setAffordabilityData] = useState<ChartData[]>([]);
+  const [newHomeSalesData, setNewHomeSalesData] = useState<ChartData[]>([]);
+  const [existingHomeSalesData, setExistingHomeSalesData] = useState<ChartData[]>([]);
+  const [housingLoading, setHousingLoading] = useState(false);
+
   // Exchange Rates data
   const [dollarIndexData, setDollarIndexData] = useState<ChartData[]>([]);
   const [eurData, setEurData] = useState<ChartData[]>([]);
@@ -342,6 +352,50 @@ export default function Home() {
     }
 
     loadExchangeRatesData();
+  }, [activeSection]);
+
+  // Load housing data when section changes
+  useEffect(() => {
+    async function loadHousingData() {
+      if (activeSection !== 'housing') return;
+
+      setHousingLoading(true);
+      try {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+
+        const [homePrice, housingStarts, permits, mortgageRate, affordability, newSales, existingSales] = await Promise.all([
+          getFredSeries('CSUSHPISA', oneYearAgoStr),
+          getFredSeries('HOUST', oneYearAgoStr),
+          getFredSeries('PERMIT', oneYearAgoStr),
+          getFredSeries('MORTGAGE30US', oneYearAgoStr),
+          getFredSeries('FIXHAI', oneYearAgoStr),
+          getFredSeries('HSN1F', oneYearAgoStr),
+          getFredSeries('EXHOSLUSM495S', oneYearAgoStr),
+        ]);
+
+        const formatData = (data: typeof homePrice) =>
+          data.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }));
+
+        setHomePriceData(formatData(homePrice));
+        setHousingStartsData(formatData(housingStarts));
+        setBuildingPermitsData(formatData(permits));
+        setMortgageRateData(formatData(mortgageRate));
+        setAffordabilityData(formatData(affordability));
+        setNewHomeSalesData(formatData(newSales));
+        setExistingHomeSalesData(formatData(existingSales));
+      } catch (error) {
+        console.error('Error loading housing data:', error);
+      } finally {
+        setHousingLoading(false);
+      }
+    }
+
+    loadHousingData();
   }, [activeSection]);
 
   return (
@@ -979,6 +1033,175 @@ export default function Home() {
           </div>
         )}
 
+        {activeSection === 'housing' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
+            <ChartCard title="S&P/Case-Shiller U.S. National Home Price Index" loading={housingLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={homePriceData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
+                  <Tooltip formatter={(value) => `${Number(value).toFixed(2)}`} />
+                  <Legend />
+                  <ReferenceLine 
+                    y={300} 
+                    stroke="#9ca3af" 
+                    strokeDasharray="3 3" 
+                    label="2023 Base" 
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#8b5cf6"
+                    strokeWidth={3}
+                    name="Home Price Index (2000=100)"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Housing Starts vs Building Permits" loading={housingLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={housingStartsData.map((d, i) => ({
+                    date: d.date,
+                    starts: d.value,
+                    permits: buildingPermitsData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[1200, 1600]} tickFormatter={(v) => `${(v/1000).toFixed(1)}M`} />
+                  <Tooltip formatter={(value) => `${(Number(value)/1000).toFixed(1)}M units`} />
+                  <Legend />
+                  <ReferenceLine 
+                    y={1400} 
+                    stroke="#9ca3af" 
+                    strokeDasharray="3 3" 
+                    label="Historical Average" 
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="starts"
+                    stroke="#0ea5e9"
+                    strokeWidth={2}
+                    name="Housing Starts"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="permits"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    name="Building Permits"
+                    dot={{ r: 4 }}
+                    strokeDasharray="5 5"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="30-Year Mortgage Rate vs Housing Affordability" loading={housingLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={mortgageRateData.map((d, i) => ({
+                    date: d.date,
+                    rate: d.value,
+                    affordability: affordabilityData[i]?.value || 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis 
+                    yAxisId="left" 
+                    domain={[5.5, 7.5]} 
+                    label={{ value: 'Mortgage Rate (%)', angle: -90, position: 'insideLeft' }}
+                  />
+                  <YAxis 
+                    yAxisId="right" 
+                    orientation="right" 
+                    domain={[95, 110]} 
+                    label={{ value: 'Affordability Index', angle: 90, position: 'insideRight' }}
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      if (name === '30-Year Rate') return `${Number(value).toFixed(2)}%`;
+                      if (name === 'Affordability Index') return `${Number(value).toFixed(1)}`;
+                      return Number(value).toFixed(2);
+                    }}
+                  />
+                  <Legend />
+                  <ReferenceLine yAxisId="left" y={7} stroke="#ef4444" strokeDasharray="3 3" label="7% Rate" />
+                  <ReferenceLine yAxisId="right" y={100} stroke="#10b981" strokeDasharray="3 3" label="100 = Affordable" />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="rate"
+                    stroke="#dc2626"
+                    strokeWidth={2}
+                    name="30-Year Rate"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="affordability"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    name="Affordability Index"
+                    dot={{ r: 4 }}
+                    strokeDasharray="5 5"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="New vs Existing Home Sales" loading={housingLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart
+                  data={newHomeSalesData.map((d, i) => ({
+                    date: d.date,
+                    newSales: d.value,
+                    existingSales: existingHomeSalesData[i]?.value ? existingHomeSalesData[i].value * 1000 : 0,
+                  }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[500, 4500]} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}M` : `${v}K`} />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      const num = Number(value);
+                      if (num >= 1000) return `${(num/1000).toFixed(2)}M units`;
+                      return `${num.toFixed(0)}K units`;
+                    }}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="newSales"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="New Home Sales"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="existingSales"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="Existing Home Sales"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+        )}
+
         {activeSection === 'interest-rates' && (
           <InterestRatesSection
             tenYearData={tenYearData}
@@ -987,7 +1210,7 @@ export default function Home() {
           />
         )}
 
-        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'exchange-rates' && activeSection !== 'interest-rates' && (
+        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'exchange-rates' && activeSection !== 'housing' && activeSection !== 'interest-rates' && (
           <div className="bg-white rounded-lg p-12 text-center max-w-2xl mx-auto">
             <div className="mb-4">
               <svg

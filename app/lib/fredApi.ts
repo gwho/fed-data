@@ -480,6 +480,111 @@ function getSampleData(seriesId: string): FredSeriesData[] {
         { date: '2024-11-01', value: '1.5123' },
         { date: '2024-12-01', value: '1.5289' },
       ];
+    case 'CSUSHPISA': // S&P/Case-Shiller U.S. National Home Price Index (2000=100)
+      return [
+        { date: '2024-01-01', value: '312.45' },
+        { date: '2024-02-01', value: '313.67' },
+        { date: '2024-03-01', value: '315.23' },
+        { date: '2024-04-01', value: '317.89' },
+        { date: '2024-05-01', value: '319.56' },
+        { date: '2024-06-01', value: '321.34' },
+        { date: '2024-07-01', value: '322.78' },
+        { date: '2024-08-01', value: '323.45' },
+        { date: '2024-09-01', value: '324.12' },
+        { date: '2024-10-01', value: '324.89' },
+        { date: '2024-11-01', value: '325.67' },
+        { date: '2024-12-01', value: '326.23' },
+      ];
+    case 'HOUST': // Housing Starts (Thousands of Units, SAAR)
+      return [
+        { date: '2024-01-01', value: '1331' },
+        { date: '2024-02-01', value: '1345' },
+        { date: '2024-03-01', value: '1321' },
+        { date: '2024-04-01', value: '1356' },
+        { date: '2024-05-01', value: '1362' },
+        { date: '2024-06-01', value: '1353' },
+        { date: '2024-07-01', value: '1338' },
+        { date: '2024-08-01', value: '1356' },
+        { date: '2024-09-01', value: '1354' },
+        { date: '2024-10-01', value: '1311' },
+        { date: '2024-11-01', value: '1289' },
+        { date: '2024-12-01', value: '1372' },
+      ];
+    case 'PERMIT': // New Private Housing Units Authorized by Building Permits (Thousands, SAAR)
+      return [
+        { date: '2024-01-01', value: '1470' },
+        { date: '2024-02-01', value: '1523' },
+        { date: '2024-03-01', value: '1458' },
+        { date: '2024-04-01', value: '1440' },
+        { date: '2024-05-01', value: '1399' },
+        { date: '2024-06-01', value: '1446' },
+        { date: '2024-07-01', value: '1454' },
+        { date: '2024-08-01', value: '1475' },
+        { date: '2024-09-01', value: '1425' },
+        { date: '2024-10-01', value: '1416' },
+        { date: '2024-11-01', value: '1505' },
+        { date: '2024-12-01', value: '1483' },
+      ];
+    case 'MORTGAGE30US': // 30-Year Fixed Rate Mortgage Average in the United States (Percent)
+      return [
+        { date: '2024-01-01', value: '6.62' },
+        { date: '2024-02-01', value: '6.74' },
+        { date: '2024-03-01', value: '6.82' },
+        { date: '2024-04-01', value: '6.96' },
+        { date: '2024-05-01', value: '7.09' },
+        { date: '2024-06-01', value: '6.95' },
+        { date: '2024-07-01', value: '6.77' },
+        { date: '2024-08-01', value: '6.46' },
+        { date: '2024-09-01', value: '6.11' },
+        { date: '2024-10-01', value: '6.32' },
+        { date: '2024-11-01', value: '6.79' },
+        { date: '2024-12-01', value: '6.60' },
+      ];
+    case 'FIXHAI': // Fixed Rate Mortgage Housing Affordability Index
+      return [
+        { date: '2024-01-01', value: '103.8' },
+        { date: '2024-02-01', value: '102.4' },
+        { date: '2024-03-01', value: '101.2' },
+        { date: '2024-04-01', value: '99.7' },
+        { date: '2024-05-01', value: '98.3' },
+        { date: '2024-06-01', value: '99.8' },
+        { date: '2024-07-01', value: '101.5' },
+        { date: '2024-08-01', value: '104.6' },
+        { date: '2024-09-01', value: '107.9' },
+        { date: '2024-10-01', value: '105.3' },
+        { date: '2024-11-01', value: '100.8' },
+        { date: '2024-12-01', value: '102.5' },
+      ];
+    case 'HSN1F': // New One Family Houses Sold (Thousands, SAAR)
+      return [
+        { date: '2024-01-01', value: '664' },
+        { date: '2024-02-01', value: '662' },
+        { date: '2024-03-01', value: '693' },
+        { date: '2024-04-01', value: '634' },
+        { date: '2024-05-01', value: '619' },
+        { date: '2024-06-01', value: '617' },
+        { date: '2024-07-01', value: '739' },
+        { date: '2024-08-01', value: '716' },
+        { date: '2024-09-01', value: '738' },
+        { date: '2024-10-01', value: '610' },
+        { date: '2024-11-01', value: '664' },
+        { date: '2024-12-01', value: '698' },
+      ];
+    case 'EXHOSLUSM495S': // Existing Home Sales (Millions, SAAR)
+      return [
+        { date: '2024-01-01', value: '4.01' },
+        { date: '2024-02-01', value: '3.96' },
+        { date: '2024-03-01', value: '4.19' },
+        { date: '2024-04-01', value: '4.14' },
+        { date: '2024-05-01', value: '4.11' },
+        { date: '2024-06-01', value: '3.89' },
+        { date: '2024-07-01', value: '3.95' },
+        { date: '2024-08-01', value: '3.86' },
+        { date: '2024-09-01', value: '3.84' },
+        { date: '2024-10-01', value: '3.96' },
+        { date: '2024-11-01', value: '4.15' },
+        { date: '2024-12-01', value: '4.24' },
+      ];
     default:
       return [];
   }
