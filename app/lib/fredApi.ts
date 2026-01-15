@@ -585,6 +585,141 @@ function getSampleData(seriesId: string): FredSeriesData[] {
         { date: '2024-11-01', value: '4.15' },
         { date: '2024-12-01', value: '4.24' },
       ];
+    case 'PCE': // Personal Consumption Expenditures (Billions of Dollars)
+      return [
+        { date: '2024-01-01', value: '18234.5' },
+        { date: '2024-02-01', value: '18312.8' },
+        { date: '2024-03-01', value: '18389.6' },
+        { date: '2024-04-01', value: '18456.3' },
+        { date: '2024-05-01', value: '18523.7' },
+        { date: '2024-06-01', value: '18598.4' },
+        { date: '2024-07-01', value: '18667.2' },
+        { date: '2024-08-01', value: '18734.9' },
+        { date: '2024-09-01', value: '18812.5' },
+        { date: '2024-10-01', value: '18889.3' },
+        { date: '2024-11-01', value: '18967.8' },
+        { date: '2024-12-01', value: '19045.6' },
+      ];
+    case 'PCEDG': // Personal Consumption Expenditures: Durable Goods (Billions)
+      return [
+        { date: '2024-01-01', value: '2345.6' },
+        { date: '2024-02-01', value: '2367.8' },
+        { date: '2024-03-01', value: '2389.4' },
+        { date: '2024-04-01', value: '2412.7' },
+        { date: '2024-05-01', value: '2434.5' },
+        { date: '2024-06-01', value: '2456.9' },
+        { date: '2024-07-01', value: '2478.3' },
+        { date: '2024-08-01', value: '2501.2' },
+        { date: '2024-09-01', value: '2523.8' },
+        { date: '2024-10-01', value: '2545.6' },
+        { date: '2024-11-01', value: '2568.9' },
+        { date: '2024-12-01', value: '2591.4' },
+      ];
+    case 'PCESV': // Personal Consumption Expenditures: Services (Billions)
+      return [
+        { date: '2024-01-01', value: '12456.3' },
+        { date: '2024-02-01', value: '12512.4' },
+        { date: '2024-03-01', value: '12567.8' },
+        { date: '2024-04-01', value: '12623.5' },
+        { date: '2024-05-01', value: '12678.9' },
+        { date: '2024-06-01', value: '12734.6' },
+        { date: '2024-07-01', value: '12789.2' },
+        { date: '2024-08-01', value: '12845.7' },
+        { date: '2024-09-01', value: '12901.3' },
+        { date: '2024-10-01', value: '12956.8' },
+        { date: '2024-11-01', value: '13012.4' },
+        { date: '2024-12-01', value: '13068.9' },
+      ];
+    case 'RSFSDP': // Retail Sales: Food Services and Drinking Places (Millions)
+      return [
+        { date: '2024-01-01', value: '93234' },
+        { date: '2024-02-01', value: '93567' },
+        { date: '2024-03-01', value: '94123' },
+        { date: '2024-04-01', value: '94678' },
+        { date: '2024-05-01', value: '95234' },
+        { date: '2024-06-01', value: '95789' },
+        { date: '2024-07-01', value: '96345' },
+        { date: '2024-08-01', value: '96901' },
+        { date: '2024-09-01', value: '97456' },
+        { date: '2024-10-01', value: '98012' },
+        { date: '2024-11-01', value: '98567' },
+        { date: '2024-12-01', value: '99123' },
+      ];
+    case 'GAFO': // Retail Sales: Clothing, General Merchandise Stores (Millions)
+      return [
+        { date: '2024-01-01', value: '78234' },
+        { date: '2024-02-01', value: '77891' },
+        { date: '2024-03-01', value: '78456' },
+        { date: '2024-04-01', value: '79123' },
+        { date: '2024-05-01', value: '79678' },
+        { date: '2024-06-01', value: '80234' },
+        { date: '2024-07-01', value: '80789' },
+        { date: '2024-08-01', value: '81345' },
+        { date: '2024-09-01', value: '81901' },
+        { date: '2024-10-01', value: '82456' },
+        { date: '2024-11-01', value: '83123' },
+        { date: '2024-12-01', value: '85678' },
+      ];
+    case 'PSAVERT': // Personal Saving Rate (Percent of Disposable Income)
+      return [
+        { date: '2024-01-01', value: '4.1' },
+        { date: '2024-02-01', value: '4.3' },
+        { date: '2024-03-01', value: '4.2' },
+        { date: '2024-04-01', value: '4.0' },
+        { date: '2024-05-01', value: '3.9' },
+        { date: '2024-06-01', value: '4.1' },
+        { date: '2024-07-01', value: '4.4' },
+        { date: '2024-08-01', value: '4.8' },
+        { date: '2024-09-01', value: '4.6' },
+        { date: '2024-10-01', value: '4.4' },
+        { date: '2024-11-01', value: '4.2' },
+        { date: '2024-12-01', value: '4.5' },
+      ];
+    case 'DSPI': // Disposable Personal Income (Billions of Dollars)
+      return [
+        { date: '2024-01-01', value: '21234.5' },
+        { date: '2024-02-01', value: '21312.8' },
+        { date: '2024-03-01', value: '21389.6' },
+        { date: '2024-04-01', value: '21467.3' },
+        { date: '2024-05-01', value: '21545.7' },
+        { date: '2024-06-01', value: '21623.4' },
+        { date: '2024-07-01', value: '21701.2' },
+        { date: '2024-08-01', value: '21779.9' },
+        { date: '2024-09-01', value: '21858.5' },
+        { date: '2024-10-01', value: '21937.3' },
+        { date: '2024-11-01', value: '22016.8' },
+        { date: '2024-12-01', value: '22095.6' },
+      ];
+    case 'UMCSENT': // University of Michigan: Consumer Sentiment (Index 1966:Q1=100)
+      return [
+        { date: '2024-01-01', value: '79.2' },
+        { date: '2024-02-01', value: '76.9' },
+        { date: '2024-03-01', value: '79.4' },
+        { date: '2024-04-01', value: '77.2' },
+        { date: '2024-05-01', value: '69.1' },
+        { date: '2024-06-01', value: '68.2' },
+        { date: '2024-07-01', value: '66.4' },
+        { date: '2024-08-01', value: '67.9' },
+        { date: '2024-09-01', value: '70.1' },
+        { date: '2024-10-01', value: '70.5' },
+        { date: '2024-11-01', value: '71.8' },
+        { date: '2024-12-01', value: '74.0' },
+      ];
+    case 'CSCICP03USM665S': // Consumer Confidence Index (Index 1985=100)
+      return [
+        { date: '2024-01-01', value: '110.7' },
+        { date: '2024-02-01', value: '104.8' },
+        { date: '2024-03-01', value: '103.1' },
+        { date: '2024-04-01', value: '97.5' },
+        { date: '2024-05-01', value: '101.3' },
+        { date: '2024-06-01', value: '100.4' },
+        { date: '2024-07-01', value: '101.9' },
+        { date: '2024-08-01', value: '105.6' },
+        { date: '2024-09-01', value: '108.7' },
+        { date: '2024-10-01', value: '108.7' },
+        { date: '2024-11-01', value: '111.7' },
+        { date: '2024-12-01', value: '104.7' },
+      ];
     default:
       return [];
   }

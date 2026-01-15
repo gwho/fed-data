@@ -5,6 +5,15 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import Sidebar from './components/Sidebar';
 import InterestRatesSection from './components/interest-rates/InterestRatesSection';
 import { getFredSeries, FredSeriesData } from './lib/fredApi';
+import { 
+  mergeSeriesByDate, 
+  formatTrillions, 
+  formatBillions, 
+  formatPercent,
+  formatIndex,
+  MergedDataPoint 
+} from './utils/chartHelpers';
+import { CustomTooltip } from './components/CustomTooltip';
 
 interface ChartData {
   date: string;
@@ -84,6 +93,13 @@ export default function Home() {
   const [cadData, setCadData] = useState<ChartData[]>([]);
   const [audData, setAudData] = useState<ChartData[]>([]);
   const [exchangeRatesLoading, setExchangeRatesLoading] = useState(false);
+
+  // Consumer Spending data (using merged data approach)
+  const [pceChartData, setPceChartData] = useState<MergedDataPoint[]>([]);
+  const [retailChartData, setRetailChartData] = useState<MergedDataPoint[]>([]);
+  const [savingsChartData, setSavingsChartData] = useState<MergedDataPoint[]>([]);
+  const [sentimentChartData, setSentimentChartData] = useState<MergedDataPoint[]>([]);
+  const [consumerSpendingLoading, setConsumerSpendingLoading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -396,6 +412,81 @@ export default function Home() {
     }
 
     loadHousingData();
+  }, [activeSection]);
+
+  // Load consumer spending data when section changes (using proper date-based merging)
+  useEffect(() => {
+    async function loadConsumerSpendingData() {
+      if (activeSection !== 'consumer-spending') return;
+
+      setConsumerSpendingLoading(true);
+      try {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+
+        const [pceTotal, pceDurable, pceServices, totalRetail, foodServices, generalMerch, savingRate, dispIncome, sentiment, confidence] = await Promise.all([
+          getFredSeries('PCE', oneYearAgoStr),
+          getFredSeries('PCEDG', oneYearAgoStr),
+          getFredSeries('PCESV', oneYearAgoStr),
+          getFredSeries('RSAFS', oneYearAgoStr),
+          getFredSeries('RSFSDP', oneYearAgoStr),
+          getFredSeries('GAFO', oneYearAgoStr),
+          getFredSeries('PSAVERT', oneYearAgoStr),
+          getFredSeries('DSPI', oneYearAgoStr),
+          getFredSeries('UMCSENT', oneYearAgoStr),
+          getFredSeries('CSCICP03USM665S', oneYearAgoStr),
+        ]);
+
+        // Format raw data to ChartData
+        const formatData = (data: typeof pceTotal): ChartData[] =>
+          data.map((d) => ({
+            date: d.date, // Keep ISO format for proper merging
+            value: parseFloat(d.value),
+          }));
+
+        // Chart 1: PCE by Category - merge by date
+        const pceChart = mergeSeriesByDate([
+          { key: 'total', data: formatData(pceTotal) },
+          { key: 'durables', data: formatData(pceDurable) },
+          { key: 'services', data: formatData(pceServices) },
+        ]);
+        setPceChartData(pceChart);
+
+        // Chart 2: Retail Sales by Category - merge by date
+        const retailChart = mergeSeriesByDate([
+          { key: 'total', data: formatData(totalRetail) },
+          { key: 'foodServices', data: formatData(foodServices) },
+          { key: 'generalMerch', data: formatData(generalMerch) },
+        ]);
+        setRetailChartData(retailChart);
+
+        // Chart 3: Saving Rate vs Income - merge by date with transform
+        const savingsChart = mergeSeriesByDate([
+          { key: 'savingRate', data: formatData(savingRate) },
+          { 
+            key: 'disposableIncome', 
+            data: formatData(dispIncome),
+            transform: (v) => v / 1000 // Convert billions to trillions
+          },
+        ]);
+        setSavingsChartData(savingsChart);
+
+        // Chart 4: Sentiment & Confidence - merge by date
+        const sentimentChart = mergeSeriesByDate([
+          { key: 'sentiment', data: formatData(sentiment) },
+          { key: 'confidence', data: formatData(confidence) },
+        ]);
+        setSentimentChartData(sentimentChart);
+
+      } catch (error) {
+        console.error('Error loading consumer spending data:', error);
+      } finally {
+        setConsumerSpendingLoading(false);
+      }
+    }
+
+    loadConsumerSpendingData();
   }, [activeSection]);
 
   return (
@@ -1202,6 +1293,234 @@ export default function Home() {
           </div>
         )}
 
+        {activeSection === 'consumer-spending' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
+            {/* Chart 1: Personal Consumption Expenditures by Type */}
+            <ChartCard title="Personal Consumption Expenditures by Category" loading={consumerSpendingLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={pceChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date" 
+                    tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short' })}
+                  />
+                  <YAxis tickFormatter={(v) => formatTrillions(v)} />
+                  <Tooltip 
+                    content={
+                      <CustomTooltip 
+                        formatters={{
+                          total: formatTrillions,
+                          durables: formatTrillions,
+                          services: formatTrillions,
+                        }}
+                      />
+                    }
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    name="Total PCE"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="durables"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    name="Durable Goods"
+                    dot={{ r: 3 }}
+                    strokeDasharray="5 5"
+                    connectNulls={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="services"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="Services"
+                    dot={{ r: 3 }}
+                    strokeDasharray="3 3"
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            {/* Chart 2: Retail Sales by Category */}
+            <ChartCard title="Retail Sales by Category" loading={consumerSpendingLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={retailChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date"
+                    tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short' })}
+                  />
+                  <YAxis tickFormatter={(v) => formatBillions(v)} />
+                  <Tooltip 
+                    content={
+                      <CustomTooltip 
+                        formatters={{
+                          total: formatBillions,
+                          foodServices: formatBillions,
+                          generalMerch: formatBillions,
+                        }}
+                      />
+                    }
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#8b5cf6"
+                    strokeWidth={3}
+                    name="Total Retail Sales"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="foodServices"
+                    stroke="#ec4899"
+                    strokeWidth={2}
+                    name="Food Services & Bars"
+                    dot={{ r: 3 }}
+                    connectNulls={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="generalMerch"
+                    stroke="#0ea5e9"
+                    strokeWidth={2}
+                    name="General Merchandise"
+                    dot={{ r: 3 }}
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            {/* Chart 3: Personal Saving Rate vs Disposable Income */}
+            <ChartCard title="Personal Saving Rate vs Disposable Income" loading={consumerSpendingLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={savingsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date"
+                    tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short' })}
+                  />
+                  <YAxis 
+                    yAxisId="left" 
+                    domain={[3, 6]} 
+                    label={{ value: 'Saving Rate (%)', angle: -90, position: 'insideLeft' }}
+                  />
+                  <YAxis 
+                    yAxisId="right" 
+                    orientation="right" 
+                    domain={[20, 23]} 
+                    tickFormatter={(v) => formatTrillions(v)}
+                    label={{ value: 'Disposable Income', angle: 90, position: 'insideRight' }}
+                  />
+                  <Tooltip 
+                    content={
+                      <CustomTooltip 
+                        formatters={{
+                          savingRate: formatPercent,
+                          disposableIncome: formatTrillions,
+                        }}
+                      />
+                    }
+                  />
+                  <Legend />
+                  <ReferenceLine yAxisId="left" y={4.5} stroke="#9ca3af" strokeDasharray="3 3" label="Historical Avg" />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="savingRate"
+                    stroke="#dc2626"
+                    strokeWidth={2}
+                    name="Saving Rate"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="disposableIncome"
+                    stroke="#16a34a"
+                    strokeWidth={2}
+                    name="Disposable Income"
+                    dot={{ r: 4 }}
+                    strokeDasharray="5 5"
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            {/* Chart 4: Consumer Sentiment & Confidence Indices */}
+            <ChartCard title="Consumer Sentiment & Confidence Indices" loading={consumerSpendingLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={sentimentChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date"
+                    tickFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short' })}
+                  />
+                  <YAxis 
+                    yAxisId="left" 
+                    domain={[60, 120]} 
+                    label={{ value: 'Sentiment (1966=100)', angle: -90, position: 'insideLeft' }}
+                  />
+                  <YAxis 
+                    yAxisId="right" 
+                    orientation="right" 
+                    domain={[90, 120]} 
+                    label={{ value: 'Confidence (1985=100)', angle: 90, position: 'insideRight' }}
+                  />
+                  <Tooltip 
+                    content={
+                      <CustomTooltip 
+                        formatters={{
+                          sentiment: formatIndex,
+                          confidence: formatIndex,
+                        }}
+                      />
+                    }
+                  />
+                  <Legend />
+                  <ReferenceLine yAxisId="left" y={85} stroke="#9ca3af" strokeDasharray="3 3" label="Sentiment Neutral" />
+                  <ReferenceLine yAxisId="right" y={100} stroke="#9ca3af" strokeDasharray="3 3" label="Confidence Neutral" />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="sentiment"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="U.Mich. Sentiment"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="confidence"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="Consumer Confidence"
+                    dot={{ r: 4 }}
+                    strokeDasharray="5 5"
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+        )}
+
         {activeSection === 'interest-rates' && (
           <InterestRatesSection
             tenYearData={tenYearData}
@@ -1210,7 +1529,7 @@ export default function Home() {
           />
         )}
 
-        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'exchange-rates' && activeSection !== 'housing' && activeSection !== 'interest-rates' && (
+        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'exchange-rates' && activeSection !== 'housing' && activeSection !== 'consumer-spending' && activeSection !== 'interest-rates' && (
           <div className="bg-white rounded-lg p-12 text-center max-w-2xl mx-auto">
             <div className="mb-4">
               <svg
