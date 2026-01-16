@@ -125,6 +125,24 @@ Built from a Figma mockup with:
 - Blue accent color for active navigation items
 - Responsive grid layout (2x2 on desktop, stacked on mobile)
 
+## GitHub Actions & CI/CD
+
+This repository includes automated workflows:
+
+### Claude Code Review (via OpenRouter)
+Automatically reviews pull requests using Claude AI through OpenRouter.
+
+**Setup**: Add your OpenRouter API key as a repository secret:
+1. Go to [Repository Secrets](https://github.com/gwho/fed-data/settings/secrets/actions)
+2. Add secret: `OPENROUTER_API_KEY`
+3. See [OpenRouter Setup Guide](.github/OPENROUTER_SETUP.md) for details
+
+### CI Workflow
+- Runs linting and build checks
+- Tests on Node.js 18.x and 20.x
+- Validates TypeScript types
+- Triggers on all PRs and pushes to main
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
