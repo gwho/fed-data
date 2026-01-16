@@ -11,6 +11,7 @@ import {
   formatBillions, 
   formatPercent,
   formatIndex,
+  formatDateTick,
   MergedDataPoint 
 } from './utils/chartHelpers';
 import { CustomTooltip } from './components/CustomTooltip';
@@ -100,6 +101,13 @@ export default function Home() {
   const [savingsChartData, setSavingsChartData] = useState<MergedDataPoint[]>([]);
   const [sentimentChartData, setSentimentChartData] = useState<MergedDataPoint[]>([]);
   const [consumerSpendingLoading, setConsumerSpendingLoading] = useState(false);
+
+  // Market Indices data
+  const [equityIndicesData, setEquityIndicesData] = useState<MergedDataPoint[]>([]);
+  const [vixData, setVixData] = useState<ChartData[]>([]);
+  const [creditSpreadData, setCreditSpreadData] = useState<MergedDataPoint[]>([]);
+  const [breadthData, setBreadthData] = useState<MergedDataPoint[]>([]);
+  const [marketIndicesLoading, setMarketIndicesLoading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -487,6 +495,63 @@ export default function Home() {
     }
 
     loadConsumerSpendingData();
+  }, [activeSection]);
+
+  // Load market indices data when section changes
+  useEffect(() => {
+    async function loadMarketIndicesData() {
+      if (activeSection !== 'market-indices') return;
+
+      setMarketIndicesLoading(true);
+      try {
+        const threeYearsAgo = new Date();
+        threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+        const threeYearsAgoStr = threeYearsAgo.toISOString().split('T')[0];
+
+        const [sp500Series, nasdaqSeries, dowSeries, vixSeries, baaSeries, aaaSeries, nyaSeries] = await Promise.all([
+          getFredSeries('SP500', threeYearsAgoStr),
+          getFredSeries('NASDAQCOM', threeYearsAgoStr),
+          getFredSeries('DJIA', threeYearsAgoStr),
+          getFredSeries('VIXCLS', threeYearsAgoStr),
+          getFredSeries('BAA10Y', threeYearsAgoStr),
+          getFredSeries('AAA10Y', threeYearsAgoStr),
+          getFredSeries('NYA', threeYearsAgoStr),
+        ]);
+
+        const formatData = (data: FredSeriesData[]): ChartData[] =>
+          data.map((d) => ({
+            date: d.date,
+            value: parseFloat(d.value),
+          }));
+
+        const equityChart = mergeSeriesByDate([
+          { key: 'sp500', data: formatData(sp500Series) },
+          { key: 'nasdaq', data: formatData(nasdaqSeries) },
+          { key: 'dow', data: formatData(dowSeries) },
+        ]);
+        setEquityIndicesData(equityChart);
+
+        setVixData(formatData(vixSeries));
+
+        const creditChart = mergeSeriesByDate([
+          { key: 'baa', data: formatData(baaSeries) },
+          { key: 'aaa', data: formatData(aaaSeries) },
+        ]);
+        setCreditSpreadData(creditChart);
+
+        const breadthChart = mergeSeriesByDate([
+          { key: 'sp500', data: formatData(sp500Series) },
+          { key: 'nyse', data: formatData(nyaSeries) },
+        ]);
+        setBreadthData(breadthChart);
+      } catch (error) {
+        console.error('Error loading market indices data:', error);
+      } finally {
+        setMarketIndicesLoading(false);
+      }
+    }
+
+    loadMarketIndicesData();
   }, [activeSection]);
 
   return (
@@ -1264,7 +1329,7 @@ export default function Home() {
                   <XAxis dataKey="date" />
                   <YAxis domain={[500, 4500]} tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}M` : `${v}K`} />
                   <Tooltip 
-                    formatter={(value, name) => {
+                    formatter={(value) => {
                       const num = Number(value);
                       if (num >= 1000) return `${(num/1000).toFixed(2)}M units`;
                       return `${num.toFixed(0)}K units`;
@@ -1521,6 +1586,172 @@ export default function Home() {
           </div>
         )}
 
+        {activeSection === 'market-indices' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
+            <ChartCard title="Equity Index Levels" loading={marketIndicesLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={equityIndicesData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tickFormatter={formatDateTick} />
+                  <YAxis tickFormatter={(value) => formatIndex(Number(value))} />
+                  <Tooltip 
+                    content={
+                      <CustomTooltip 
+                        formatters={{
+                          sp500: formatIndex,
+                          nasdaq: formatIndex,
+                          dow: formatIndex,
+                        }}
+                      />
+                    }
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="sp500"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    name="S&P 500"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="nasdaq"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    name="Nasdaq Composite"
+                    dot={{ r: 3 }}
+                    strokeDasharray="5 5"
+                    connectNulls={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="dow"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="Dow Jones Industrial Average"
+                    dot={{ r: 3 }}
+                    strokeDasharray="3 3"
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Volatility Index (VIX)" loading={marketIndicesLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={vixData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tickFormatter={formatDateTick} />
+                  <YAxis tickFormatter={(value) => formatIndex(Number(value))} />
+                  <Tooltip 
+                    content={
+                      <CustomTooltip 
+                        formatters={{
+                          value: formatIndex,
+                        }}
+                      />
+                    }
+                  />
+                  <Legend />
+                  <ReferenceLine y={20} stroke="#9ca3af" strokeDasharray="3 3" label="Elevated Volatility" />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    name="VIX"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Corporate Bond Spreads (vs 10Y Treasury)" loading={marketIndicesLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={creditSpreadData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tickFormatter={formatDateTick} />
+                  <YAxis tickFormatter={(value) => formatPercent(Number(value))} />
+                  <Tooltip 
+                    content={
+                      <CustomTooltip 
+                        formatters={{
+                          baa: formatPercent,
+                          aaa: formatPercent,
+                        }}
+                      />
+                    }
+                  />
+                  <Legend />
+                  <ReferenceLine y={2} stroke="#9ca3af" strokeDasharray="3 3" label="Tight" />
+                  <ReferenceLine y={4} stroke="#ef4444" strokeDasharray="3 3" label="Stressed" />
+                  <Line
+                    type="monotone"
+                    dataKey="baa"
+                    stroke="#dc2626"
+                    strokeWidth={2}
+                    name="Baa Spread"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="aaa"
+                    stroke="#0d9488"
+                    strokeWidth={2}
+                    name="Aaa Spread"
+                    dot={{ r: 4 }}
+                    strokeDasharray="5 5"
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+
+            <ChartCard title="Market Breadth: NYSE Composite vs S&P 500" loading={marketIndicesLoading}>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={breadthData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tickFormatter={formatDateTick} />
+                  <YAxis tickFormatter={(value) => formatIndex(Number(value))} />
+                  <Tooltip 
+                    content={
+                      <CustomTooltip 
+                        formatters={{
+                          sp500: formatIndex,
+                          nyse: formatIndex,
+                        }}
+                      />
+                    }
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="sp500"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="S&P 500"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="nyse"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    name="NYSE Composite"
+                    dot={{ r: 4 }}
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+        )}
+
         {activeSection === 'interest-rates' && (
           <InterestRatesSection
             tenYearData={tenYearData}
@@ -1529,7 +1760,7 @@ export default function Home() {
           />
         )}
 
-        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'exchange-rates' && activeSection !== 'housing' && activeSection !== 'consumer-spending' && activeSection !== 'interest-rates' && (
+        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'exchange-rates' && activeSection !== 'housing' && activeSection !== 'consumer-spending' && activeSection !== 'market-indices' && activeSection !== 'interest-rates' && (
           <div className="bg-white rounded-lg p-12 text-center max-w-2xl mx-auto">
             <div className="mb-4">
               <svg

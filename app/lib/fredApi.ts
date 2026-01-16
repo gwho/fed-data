@@ -232,6 +232,96 @@ function getSampleData(seriesId: string): FredSeriesData[] {
         { date: '2024-11-01', value: '5969.34' },
         { date: '2024-12-01', value: '5881.63' },
       ];
+    case 'NASDAQCOM': // Nasdaq Composite Index
+      return [
+        { date: '2024-01-01', value: '15128.58' },
+        { date: '2024-02-01', value: '15854.12' },
+        { date: '2024-03-01', value: '16379.46' },
+        { date: '2024-04-01', value: '15768.93' },
+        { date: '2024-05-01', value: '16848.72' },
+        { date: '2024-06-01', value: '17219.34' },
+        { date: '2024-07-01', value: '17582.11' },
+        { date: '2024-08-01', value: '17896.22' },
+        { date: '2024-09-01', value: '18214.07' },
+        { date: '2024-10-01', value: '17942.88' },
+        { date: '2024-11-01', value: '18733.55' },
+        { date: '2024-12-01', value: '18421.19' },
+      ];
+    case 'DJIA': // Dow Jones Industrial Average
+      return [
+        { date: '2024-01-01', value: '37689.54' },
+        { date: '2024-02-01', value: '38987.24' },
+        { date: '2024-03-01', value: '39512.18' },
+        { date: '2024-04-01', value: '38197.83' },
+        { date: '2024-05-01', value: '39462.75' },
+        { date: '2024-06-01', value: '39913.42' },
+        { date: '2024-07-01', value: '40122.09' },
+        { date: '2024-08-01', value: '40789.55' },
+        { date: '2024-09-01', value: '41203.21' },
+        { date: '2024-10-01', value: '40651.37' },
+        { date: '2024-11-01', value: '41872.44' },
+        { date: '2024-12-01', value: '41433.18' },
+      ];
+    case 'VIXCLS': // CBOE Volatility Index
+      return [
+        { date: '2024-01-01', value: '14.8' },
+        { date: '2024-02-01', value: '15.6' },
+        { date: '2024-03-01', value: '13.9' },
+        { date: '2024-04-01', value: '17.2' },
+        { date: '2024-05-01', value: '14.1' },
+        { date: '2024-06-01', value: '12.9' },
+        { date: '2024-07-01', value: '13.6' },
+        { date: '2024-08-01', value: '14.4' },
+        { date: '2024-09-01', value: '15.1' },
+        { date: '2024-10-01', value: '18.3' },
+        { date: '2024-11-01', value: '16.7' },
+        { date: '2024-12-01', value: '15.3' },
+      ];
+    case 'BAA10Y': // Moody's Baa Corporate Bond Yield Relative to 10Y Treasury
+      return [
+        { date: '2024-01-01', value: '3.5' },
+        { date: '2024-02-01', value: '3.4' },
+        { date: '2024-03-01', value: '3.2' },
+        { date: '2024-04-01', value: '3.6' },
+        { date: '2024-05-01', value: '3.3' },
+        { date: '2024-06-01', value: '3.1' },
+        { date: '2024-07-01', value: '3.0' },
+        { date: '2024-08-01', value: '3.2' },
+        { date: '2024-09-01', value: '3.4' },
+        { date: '2024-10-01', value: '3.7' },
+        { date: '2024-11-01', value: '3.4' },
+        { date: '2024-12-01', value: '3.2' },
+      ];
+    case 'AAA10Y': // Moody's Aaa Corporate Bond Yield Relative to 10Y Treasury
+      return [
+        { date: '2024-01-01', value: '2.1' },
+        { date: '2024-02-01', value: '2.0' },
+        { date: '2024-03-01', value: '1.9' },
+        { date: '2024-04-01', value: '2.2' },
+        { date: '2024-05-01', value: '2.0' },
+        { date: '2024-06-01', value: '1.8' },
+        { date: '2024-07-01', value: '1.7' },
+        { date: '2024-08-01', value: '1.9' },
+        { date: '2024-09-01', value: '2.0' },
+        { date: '2024-10-01', value: '2.3' },
+        { date: '2024-11-01', value: '2.1' },
+        { date: '2024-12-01', value: '2.0' },
+      ];
+    case 'NYA': // NYSE Composite Index
+      return [
+        { date: '2024-01-01', value: '16623.45' },
+        { date: '2024-02-01', value: '17118.32' },
+        { date: '2024-03-01', value: '17534.67' },
+        { date: '2024-04-01', value: '16897.12' },
+        { date: '2024-05-01', value: '17645.89' },
+        { date: '2024-06-01', value: '17922.14' },
+        { date: '2024-07-01', value: '18103.55' },
+        { date: '2024-08-01', value: '18476.21' },
+        { date: '2024-09-01', value: '18829.77' },
+        { date: '2024-10-01', value: '18514.96' },
+        { date: '2024-11-01', value: '19187.33' },
+        { date: '2024-12-01', value: '18942.08' },
+      ];
     case 'CIVPART': // Labor Force Participation Rate
       return [
         { date: '2024-01-01', value: '62.5' },
