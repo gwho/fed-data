@@ -44,6 +44,8 @@ export default function Home() {
   const [unemploymentData, setUnemploymentData] = useState<ChartData[]>([]);
   const [tenYearData, setTenYearData] = useState<ChartData[]>([]);
   const [threeMonthData, setThreeMonthData] = useState<ChartData[]>([]);
+  const [fedFundsData, setFedFundsData] = useState<ChartData[]>([]);
+  const [mortgageData, setMortgageData] = useState<ChartData[]>([]);
   const [gdpData, setGdpData] = useState<ChartData[]>([]);
   const [sp500Data, setSp500Data] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,13 +125,15 @@ export default function Home() {
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
-        const [cpi, unemployment, gdp, sp500, tenYear, threeMonth] = await Promise.all([
+        const [cpi, unemployment, gdp, sp500, tenYear, threeMonth, fedFunds, mortgage] = await Promise.all([
           getFredSeries('CPIAUCSL', threeYearsAgoStr),
           getFredSeries('UNRATE', oneYearAgoStr),
           getFredSeries('A191RL1Q225SBEA', oneYearAgoStr), // GDP
           getFredSeries('SP500', oneYearAgoStr),            // S&P 500
           getFredSeries('GS10', oneYearAgoStr),
           getFredSeries('TB3MS', oneYearAgoStr),
+          getFredSeries('FEDFUNDS', oneYearAgoStr),         // Federal Funds Rate
+          getFredSeries('MORTGAGE30US', oneYearAgoStr),     // 30-Year Mortgage
         ]);
 
         // Group CPI data by year and take January value for each year
@@ -182,6 +186,20 @@ export default function Home() {
 
         setThreeMonthData(
           threeMonth.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }))
+        );
+
+        setFedFundsData(
+          fedFunds.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }))
+        );
+
+        setMortgageData(
+          mortgage.map((d) => ({
             date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
             value: parseFloat(d.value),
           }))
@@ -1756,6 +1774,8 @@ export default function Home() {
           <InterestRatesSection
             tenYearData={tenYearData}
             threeMonthData={threeMonthData}
+            fedFundsData={fedFundsData}
+            mortgageData={mortgageData}
             loading={loading}
           />
         )}

@@ -104,6 +104,21 @@ function getSampleData(seriesId: string): FredSeriesData[] {
         { date: '2024-11-01', value: '4.38' },
         { date: '2024-12-01', value: '4.32' },
       ];
+    case 'FEDFUNDS': // Federal Funds Effective Rate
+      return [
+        { date: '2024-01-01', value: '5.33' },
+        { date: '2024-02-01', value: '5.33' },
+        { date: '2024-03-01', value: '5.33' },
+        { date: '2024-04-01', value: '5.33' },
+        { date: '2024-05-01', value: '5.33' },
+        { date: '2024-06-01', value: '5.33' },
+        { date: '2024-07-01', value: '5.33' },
+        { date: '2024-08-01', value: '5.33' },
+        { date: '2024-09-01', value: '4.83' },
+        { date: '2024-10-01', value: '4.83' },
+        { date: '2024-11-01', value: '4.58' },
+        { date: '2024-12-01', value: '4.33' },
+      ];
     case 'CPILFESL': // Core CPI (excludes food & energy)
       return [
         { date: '2024-01-01', value: '310.326' },

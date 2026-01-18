@@ -10,6 +10,8 @@ interface ChartData {
 interface InterestRatesSectionProps {
   tenYearData: ChartData[];
   threeMonthData: ChartData[];
+  fedFundsData: ChartData[];
+  mortgageData: ChartData[];
   loading: boolean;
 }
 
@@ -30,7 +32,7 @@ function ChartCard({ title, children, loading }: { title: string; children: Reac
   );
 }
 
-export default function InterestRatesSection({ tenYearData, threeMonthData, loading }: InterestRatesSectionProps) {
+export default function InterestRatesSection({ tenYearData, threeMonthData, fedFundsData, mortgageData, loading }: InterestRatesSectionProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
       {/* Chart 1: 10-Year Treasury */}
@@ -83,44 +85,54 @@ export default function InterestRatesSection({ tenYearData, threeMonthData, load
         )}
       </ChartCard>
 
-      {/* Placeholder 3: Coming Soon */}
-      <ChartCard title="Additional Rate Metrics" loading={false}>
-        <div className="flex flex-col items-center justify-center h-full text-gray-500">
-          <svg
-            className="h-16 w-16 mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-            />
-          </svg>
-          <p className="text-sm">More interest rate metrics coming soon</p>
-        </div>
+      {/* Chart 3: Federal Funds Rate */}
+      <ChartCard title="Federal Funds Effective Rate" loading={loading}>
+        {fedFundsData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={fedFundsData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis domain={[4, 5.5]} />
+              <Tooltip />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="#dc2626"
+                strokeWidth={2}
+                name="Fed Funds Rate (%)"
+                dot={{ r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="text-gray-500">No data available</div>
+        )}
       </ChartCard>
 
-      {/* Placeholder 4: Coming Soon */}
-      <ChartCard title="Yield Curve Analysis" loading={false}>
-        <div className="flex flex-col items-center justify-center h-full text-gray-500">
-          <svg
-            className="h-16 w-16 mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
-            />
-          </svg>
-          <p className="text-sm">Yield curve visualization coming soon</p>
-        </div>
+      {/* Chart 4: 30-Year Mortgage Rate */}
+      <ChartCard title="30-Year Fixed Rate Mortgage Average" loading={loading}>
+        {mortgageData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={mortgageData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis domain={[6, 7.5]} />
+              <Tooltip />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="#ea580c"
+                strokeWidth={2}
+                name="Mortgage Rate (%)"
+                dot={{ r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="text-gray-500">No data available</div>
+        )}
       </ChartCard>
     </div>
   );
