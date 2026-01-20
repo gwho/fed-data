@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import Sidebar from './components/Sidebar';
 import InterestRatesSection from './components/interest-rates/InterestRatesSection';
-import { getFredSeries, FredSeriesData } from './lib/fredApi';
+import { getFredSeriesCached, FredSeriesData } from './lib/fredApi';
 import { 
   mergeSeriesByDate, 
   formatTrillions, 
@@ -44,6 +44,8 @@ export default function Home() {
   const [unemploymentData, setUnemploymentData] = useState<ChartData[]>([]);
   const [tenYearData, setTenYearData] = useState<ChartData[]>([]);
   const [threeMonthData, setThreeMonthData] = useState<ChartData[]>([]);
+  const [fedFundsData, setFedFundsData] = useState<ChartData[]>([]);
+  const [mortgageData, setMortgageData] = useState<ChartData[]>([]);
   const [gdpData, setGdpData] = useState<ChartData[]>([]);
   const [sp500Data, setSp500Data] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,13 +125,15 @@ export default function Home() {
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
-        const [cpi, unemployment, gdp, sp500, tenYear, threeMonth] = await Promise.all([
-          getFredSeries('CPIAUCSL', threeYearsAgoStr),
-          getFredSeries('UNRATE', oneYearAgoStr),
-          getFredSeries('A191RL1Q225SBEA', oneYearAgoStr), // GDP
-          getFredSeries('SP500', oneYearAgoStr),            // S&P 500
-          getFredSeries('GS10', oneYearAgoStr),
-          getFredSeries('TB3MS', oneYearAgoStr),
+        const [cpi, unemployment, gdp, sp500, tenYear, threeMonth, fedFunds, mortgage] = await Promise.all([
+          getFredSeriesCached('CPIAUCSL', threeYearsAgoStr),
+          getFredSeriesCached('UNRATE', oneYearAgoStr),
+          getFredSeriesCached('A191RL1Q225SBEA', oneYearAgoStr), // GDP
+          getFredSeriesCached('SP500', oneYearAgoStr),            // S&P 500
+          getFredSeriesCached('GS10', oneYearAgoStr),
+          getFredSeriesCached('TB3MS', oneYearAgoStr),
+          getFredSeriesCached('FEDFUNDS', oneYearAgoStr),         // Federal Funds Rate
+          getFredSeriesCached('MORTGAGE30US', oneYearAgoStr),     // 30-Year Mortgage
         ]);
 
         // Group CPI data by year and take January value for each year
@@ -186,6 +190,20 @@ export default function Home() {
             value: parseFloat(d.value),
           }))
         );
+
+        setFedFundsData(
+          fedFunds.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }))
+        );
+
+        setMortgageData(
+          mortgage.map((d) => ({
+            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+            value: parseFloat(d.value),
+          }))
+        );
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -208,13 +226,13 @@ export default function Home() {
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
         const [coreCpi, pce, corePce, foodCpi, energyCpi, housingCpi, medicalCpi] = await Promise.all([
-          getFredSeries('CPILFESL', oneYearAgoStr),
-          getFredSeries('PCEPI', oneYearAgoStr),
-          getFredSeries('PCEPILFE', oneYearAgoStr),
-          getFredSeries('CPIUFDSL', oneYearAgoStr),
-          getFredSeries('CPIENGSL', oneYearAgoStr),
-          getFredSeries('CUSR0000SAH', oneYearAgoStr),
-          getFredSeries('CPIMEDSL', oneYearAgoStr),
+          getFredSeriesCached('CPILFESL', oneYearAgoStr),
+          getFredSeriesCached('PCEPI', oneYearAgoStr),
+          getFredSeriesCached('PCEPILFE', oneYearAgoStr),
+          getFredSeriesCached('CPIUFDSL', oneYearAgoStr),
+          getFredSeriesCached('CPIENGSL', oneYearAgoStr),
+          getFredSeriesCached('CUSR0000SAH', oneYearAgoStr),
+          getFredSeriesCached('CPIMEDSL', oneYearAgoStr),
         ]);
 
         const formatData = (data: typeof coreCpi) =>
@@ -252,10 +270,10 @@ export default function Home() {
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
         const [laborForce, payrolls, initialClaims, hourlyEarnings] = await Promise.all([
-          getFredSeries('CIVPART', oneYearAgoStr),
-          getFredSeries('PAYEMS', oneYearAgoStr),
-          getFredSeries('ICSA', oneYearAgoStr),
-          getFredSeries('AHETPI', oneYearAgoStr),
+          getFredSeriesCached('CIVPART', oneYearAgoStr),
+          getFredSeriesCached('PAYEMS', oneYearAgoStr),
+          getFredSeriesCached('ICSA', oneYearAgoStr),
+          getFredSeriesCached('AHETPI', oneYearAgoStr),
         ]);
 
         const formatData = (data: typeof laborForce) =>
@@ -294,11 +312,11 @@ export default function Home() {
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
         const [realGdp, nominalGdp, industrialProd, retailSales, capacityUtil] = await Promise.all([
-          getFredSeries('A191RL1Q225SBEA', twoYearsAgoStr),
-          getFredSeries('A191RP1Q027SBEA', twoYearsAgoStr),
-          getFredSeries('INDPRO', oneYearAgoStr),
-          getFredSeries('RSAFS', oneYearAgoStr),
-          getFredSeries('TCU', oneYearAgoStr),
+          getFredSeriesCached('A191RL1Q225SBEA', twoYearsAgoStr),
+          getFredSeriesCached('A191RP1Q027SBEA', twoYearsAgoStr),
+          getFredSeriesCached('INDPRO', oneYearAgoStr),
+          getFredSeriesCached('RSAFS', oneYearAgoStr),
+          getFredSeriesCached('TCU', oneYearAgoStr),
         ]);
 
         // Format quarterly GDP data
@@ -342,15 +360,15 @@ export default function Home() {
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
         const [dollarIndex, eur, gbp, jpy, cny, mxn, inr, cad, aud] = await Promise.all([
-          getFredSeries('DTWEXBGS', oneYearAgoStr),
-          getFredSeries('DEXUSEU', oneYearAgoStr),
-          getFredSeries('DEXUSUK', oneYearAgoStr),
-          getFredSeries('DEXJPUS', oneYearAgoStr),
-          getFredSeries('DEXCHUS', oneYearAgoStr),
-          getFredSeries('DEXMXUS', oneYearAgoStr),
-          getFredSeries('DEXINUS', oneYearAgoStr),
-          getFredSeries('DEXCAUS', oneYearAgoStr),
-          getFredSeries('DEXUSAL', oneYearAgoStr),
+          getFredSeriesCached('DTWEXBGS', oneYearAgoStr),
+          getFredSeriesCached('DEXUSEU', oneYearAgoStr),
+          getFredSeriesCached('DEXUSUK', oneYearAgoStr),
+          getFredSeriesCached('DEXJPUS', oneYearAgoStr),
+          getFredSeriesCached('DEXCHUS', oneYearAgoStr),
+          getFredSeriesCached('DEXMXUS', oneYearAgoStr),
+          getFredSeriesCached('DEXINUS', oneYearAgoStr),
+          getFredSeriesCached('DEXCAUS', oneYearAgoStr),
+          getFredSeriesCached('DEXUSAL', oneYearAgoStr),
         ]);
 
         const formatData = (data: typeof dollarIndex) =>
@@ -390,13 +408,13 @@ export default function Home() {
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
         const [homePrice, housingStarts, permits, mortgageRate, affordability, newSales, existingSales] = await Promise.all([
-          getFredSeries('CSUSHPISA', oneYearAgoStr),
-          getFredSeries('HOUST', oneYearAgoStr),
-          getFredSeries('PERMIT', oneYearAgoStr),
-          getFredSeries('MORTGAGE30US', oneYearAgoStr),
-          getFredSeries('FIXHAI', oneYearAgoStr),
-          getFredSeries('HSN1F', oneYearAgoStr),
-          getFredSeries('EXHOSLUSM495S', oneYearAgoStr),
+          getFredSeriesCached('CSUSHPISA', oneYearAgoStr),
+          getFredSeriesCached('HOUST', oneYearAgoStr),
+          getFredSeriesCached('PERMIT', oneYearAgoStr),
+          getFredSeriesCached('MORTGAGE30US', oneYearAgoStr),
+          getFredSeriesCached('FIXHAI', oneYearAgoStr),
+          getFredSeriesCached('HSN1F', oneYearAgoStr),
+          getFredSeriesCached('EXHOSLUSM495S', oneYearAgoStr),
         ]);
 
         const formatData = (data: typeof homePrice) =>
@@ -434,16 +452,16 @@ export default function Home() {
         const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
 
         const [pceTotal, pceDurable, pceServices, totalRetail, foodServices, generalMerch, savingRate, dispIncome, sentiment, confidence] = await Promise.all([
-          getFredSeries('PCE', oneYearAgoStr),
-          getFredSeries('PCEDG', oneYearAgoStr),
-          getFredSeries('PCESV', oneYearAgoStr),
-          getFredSeries('RSAFS', oneYearAgoStr),
-          getFredSeries('RSFSDP', oneYearAgoStr),
-          getFredSeries('GAFO', oneYearAgoStr),
-          getFredSeries('PSAVERT', oneYearAgoStr),
-          getFredSeries('DSPI', oneYearAgoStr),
-          getFredSeries('UMCSENT', oneYearAgoStr),
-          getFredSeries('CSCICP03USM665S', oneYearAgoStr),
+          getFredSeriesCached('PCE', oneYearAgoStr),
+          getFredSeriesCached('PCEDG', oneYearAgoStr),
+          getFredSeriesCached('PCESV', oneYearAgoStr),
+          getFredSeriesCached('RSAFS', oneYearAgoStr),
+          getFredSeriesCached('RSFSDP', oneYearAgoStr),
+          getFredSeriesCached('GAFO', oneYearAgoStr),
+          getFredSeriesCached('PSAVERT', oneYearAgoStr),
+          getFredSeriesCached('DSPI', oneYearAgoStr),
+          getFredSeriesCached('UMCSENT', oneYearAgoStr),
+          getFredSeriesCached('CSCICP03USM665S', oneYearAgoStr),
         ]);
 
         // Format raw data to ChartData
@@ -509,13 +527,13 @@ export default function Home() {
         const threeYearsAgoStr = threeYearsAgo.toISOString().split('T')[0];
 
         const [sp500Series, nasdaqSeries, dowSeries, vixSeries, baaSeries, aaaSeries, nyaSeries] = await Promise.all([
-          getFredSeries('SP500', threeYearsAgoStr),
-          getFredSeries('NASDAQCOM', threeYearsAgoStr),
-          getFredSeries('DJIA', threeYearsAgoStr),
-          getFredSeries('VIXCLS', threeYearsAgoStr),
-          getFredSeries('BAA10Y', threeYearsAgoStr),
-          getFredSeries('AAA10Y', threeYearsAgoStr),
-          getFredSeries('NYA', threeYearsAgoStr),
+          getFredSeriesCached('SP500', threeYearsAgoStr),
+          getFredSeriesCached('NASDAQCOM', threeYearsAgoStr),
+          getFredSeriesCached('DJIA', threeYearsAgoStr),
+          getFredSeriesCached('VIXCLS', threeYearsAgoStr),
+          getFredSeriesCached('BAA10Y', threeYearsAgoStr),
+          getFredSeriesCached('AAA10Y', threeYearsAgoStr),
+          getFredSeriesCached('NYA', threeYearsAgoStr),
         ]);
 
         const formatData = (data: FredSeriesData[]): ChartData[] =>
@@ -1756,6 +1774,8 @@ export default function Home() {
           <InterestRatesSection
             tenYearData={tenYearData}
             threeMonthData={threeMonthData}
+            fedFundsData={fedFundsData}
+            mortgageData={mortgageData}
             loading={loading}
           />
         )}

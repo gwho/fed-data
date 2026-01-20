@@ -1,3 +1,5 @@
+import { fredCache } from './fredCache';
+
 const FRED_API_BASE = 'https://api.stlouisfed.org/fred';
 const API_KEY = process.env.NEXT_PUBLIC_FRED_API_KEY || '';
 
@@ -49,6 +51,42 @@ export async function getFredSeries(seriesId: string, startDate?: string): Promi
     console.error('Error fetching FRED data:', error);
     return getSampleData(seriesId);
   }
+}
+
+/**
+ * Cached version of getFredSeries
+ *
+ * This function wraps getFredSeries with caching to reduce API calls.
+ * It checks the cache first, and only fetches from the API if needed.
+ *
+ * Cache behavior:
+ * - First checks memory cache (instant)
+ * - Then checks localStorage (persists across refreshes)
+ * - Only calls API on cache miss
+ * - Stores results in both caches for 24 hours
+ *
+ * @param seriesId - FRED series identifier (e.g., "FEDFUNDS", "UNRATE")
+ * @param startDate - Optional start date for data range
+ * @returns Promise resolving to array of FredSeriesData
+ *
+ * @example
+ * // Instead of: const data = await getFredSeries('FEDFUNDS', '2024-01-01');
+ * // Use:        const data = await getFredSeriesCached('FEDFUNDS', '2024-01-01');
+ */
+export async function getFredSeriesCached(seriesId: string, startDate?: string): Promise<FredSeriesData[]> {
+  // Step 1: Check cache first
+  const cached = fredCache.get(seriesId, startDate);
+  if (cached) {
+    return cached;
+  }
+
+  // Step 2: Cache miss - fetch from API
+  const data = await getFredSeries(seriesId, startDate);
+
+  // Step 3: Store in cache for next time
+  fredCache.set(seriesId, startDate, data);
+
+  return data;
 }
 
 function getSampleData(seriesId: string): FredSeriesData[] {
@@ -103,6 +141,21 @@ function getSampleData(seriesId: string): FredSeriesData[] {
         { date: '2024-10-01', value: '4.51' },
         { date: '2024-11-01', value: '4.38' },
         { date: '2024-12-01', value: '4.32' },
+      ];
+    case 'FEDFUNDS': // Federal Funds Effective Rate
+      return [
+        { date: '2024-01-01', value: '5.33' },
+        { date: '2024-02-01', value: '5.33' },
+        { date: '2024-03-01', value: '5.33' },
+        { date: '2024-04-01', value: '5.33' },
+        { date: '2024-05-01', value: '5.33' },
+        { date: '2024-06-01', value: '5.33' },
+        { date: '2024-07-01', value: '5.33' },
+        { date: '2024-08-01', value: '5.33' },
+        { date: '2024-09-01', value: '4.83' },
+        { date: '2024-10-01', value: '4.83' },
+        { date: '2024-11-01', value: '4.58' },
+        { date: '2024-12-01', value: '4.33' },
       ];
     case 'CPILFESL': // Core CPI (excludes food & energy)
       return [
