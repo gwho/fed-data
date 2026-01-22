@@ -43,6 +43,17 @@ export interface SignalsResponse {
 }
 
 /**
+ * Response format when specific signals are requested via ?type=
+ */
+export interface FilteredSignalsResponse {
+  signals: Record<string, SignalResult | null>;
+  meta: {
+    calculatedAt: string;
+    version: string;
+  };
+}
+
+/**
  * Helper: Get the latest value from a FRED series
  */
 function getLatestValue(data: FredSeriesData[]): number | null {

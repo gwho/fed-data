@@ -13,7 +13,7 @@ import {
   calculateAllSignals,
   getSignalByType,
   SignalResult,
-  SignalsResponse,
+  FilteredSignalsResponse,
 } from '@/app/lib/tradingSignals';
 
 /**
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       signals[type] = signal;
     }
 
-    const response: Partial<SignalsResponse> & { signals: Record<string, SignalResult | null> } = {
+    const response: FilteredSignalsResponse = {
       signals,
       meta: {
         calculatedAt: new Date().toISOString(),
