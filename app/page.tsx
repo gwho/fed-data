@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import Sidebar from './components/Sidebar';
 import InterestRatesSection from './components/interest-rates/InterestRatesSection';
+import TradingSignalsSection from './components/trading-signals/TradingSignalsSection';
 import { getFredSeriesCached, FredSeriesData } from './lib/fredApi';
 import { 
   mergeSeriesByDate, 
@@ -1780,7 +1781,11 @@ export default function Home() {
           />
         )}
 
-        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'exchange-rates' && activeSection !== 'housing' && activeSection !== 'consumer-spending' && activeSection !== 'market-indices' && activeSection !== 'interest-rates' && (
+        {activeSection === 'trading-signals' && (
+          <TradingSignalsSection isActive={activeSection === 'trading-signals'} />
+        )}
+
+        {activeSection !== 'key-indicators' && activeSection !== 'inflation' && activeSection !== 'employment' && activeSection !== 'economic-growth' && activeSection !== 'exchange-rates' && activeSection !== 'housing' && activeSection !== 'consumer-spending' && activeSection !== 'market-indices' && activeSection !== 'interest-rates' && activeSection !== 'trading-signals' && (
           <div className="bg-white rounded-lg p-12 text-center max-w-2xl mx-auto">
             <div className="mb-4">
               <svg
