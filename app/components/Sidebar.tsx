@@ -1,6 +1,6 @@
 'use client';
 
-import { TrendingUp, Briefcase, LineChart, BarChart3, Globe, Home, ShoppingCart, RefreshCw } from 'lucide-react';
+import { TrendingUp, Briefcase, LineChart, BarChart3, Globe, Home, ShoppingCart, RefreshCw, Activity } from 'lucide-react';
 import { fredCache } from '../lib/fredCache';
 
 interface SidebarProps {
@@ -18,6 +18,7 @@ const menuItems = [
   { id: 'housing', label: 'Housing', icon: Home },
   { id: 'consumer-spending', label: 'Consumer Spending', icon: ShoppingCart },
   { id: 'market-indices', label: 'Market Indices', icon: BarChart3 },
+  { id: 'trading-signals', label: 'Trading Signals', icon: Activity },
 ];
 
 export default function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
