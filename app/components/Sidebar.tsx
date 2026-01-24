@@ -1,6 +1,7 @@
 'use client';
 
-import { TrendingUp, Briefcase, LineChart, BarChart3, Globe, Home, ShoppingCart } from 'lucide-react';
+import { TrendingUp, Briefcase, LineChart, BarChart3, Globe, Home, ShoppingCart, RefreshCw, Activity } from 'lucide-react';
+import { fredCache } from '../lib/fredCache';
 
 interface SidebarProps {
   activeSection: string;
@@ -17,6 +18,7 @@ const menuItems = [
   { id: 'housing', label: 'Housing', icon: Home },
   { id: 'consumer-spending', label: 'Consumer Spending', icon: ShoppingCart },
   { id: 'market-indices', label: 'Market Indices', icon: BarChart3 },
+  { id: 'trading-signals', label: 'Trading Signals', icon: Activity },
 ];
 
 export default function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
@@ -57,8 +59,21 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
         })}
       </nav>
 
-      <div className="p-5 border-t border-gray-200 text-xs text-gray-500">
-        Data provided by Federal Reserve Economic Data (FRED)
+      <div className="p-5 border-t border-gray-200">
+        <button
+          onClick={() => {
+            fredCache.clear();
+            window.location.reload();
+          }}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 mb-3 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          title="Clear cache and fetch fresh data"
+        >
+          <RefreshCw size={16} />
+          <span>Refresh Data</span>
+        </button>
+        <p className="text-xs text-gray-500 text-center">
+          Data provided by Federal Reserve Economic Data (FRED)
+        </p>
       </div>
     </aside>
   );
