@@ -8,9 +8,15 @@
  * GET /api/fred?series=FEDFUNDS&start=2024-01-01
  *
  * @see docs/API_SECURITY.md for security documentation
+ * @see docs/TYPE_SAFETY_ZOD.md for validation documentation
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import {
+  FredApiResponseSchema,
+  FredObservationSchema,
+} from '@/app/lib/schemas/fred';
 
 /**
  * Server-side FRED API key (never exposed to client)
@@ -240,28 +246,53 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
 
     // Transform and filter the data
-    const observations = data.observations
+    const rawObservations = data.observations
       ?.filter((obs: { value: string }) => obs.value !== '.')
       .map((obs: { date: string; value: string }) => ({
         date: obs.date,
         value: obs.value,
-      }));
+      })) || [];
 
-    return NextResponse.json(
-      {
-        series: seriesId.toUpperCase(),
-        observations: observations || [],
-        count: observations?.length || 0,
-      },
-      {
-        headers: {
-          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
-          'X-RateLimit-Remaining': rateLimit.remaining.toString(),
-        },
+    // Validate each observation with Zod (logs warnings for invalid data)
+    const observations = rawObservations.filter((obs: unknown) => {
+      const result = FredObservationSchema.safeParse(obs);
+      if (!result.success) {
+        console.warn('Invalid observation filtered out:', obs, result.error.issues);
+        return false;
       }
-    );
+      return true;
+    });
+
+    // Build and validate the response
+    const responseData = {
+      series: seriesId.toUpperCase(),
+      observations,
+      count: observations.length,
+    };
+
+    // Validate full response structure (throws if invalid)
+    const validatedResponse = FredApiResponseSchema.parse(responseData);
+
+    return NextResponse.json(validatedResponse, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+      },
+    });
   } catch (error) {
     console.error('Error in FRED API proxy:', error);
+
+    // Handle Zod validation errors specifically
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Data validation error',
+          message: 'Response data failed validation',
+          issues: error.issues,
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       {

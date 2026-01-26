@@ -6,20 +6,26 @@
  * GET /api/signals?type=rate,volatility - Returns multiple signals
  *
  * @see docs/SIGNALS_API.md for full documentation
+ * @see docs/TYPE_SAFETY_ZOD.md for validation documentation
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import {
   calculateAllSignals,
   getSignalByType,
-  SignalResult,
-  FilteredSignalsResponse,
 } from '@/app/lib/tradingSignals';
+import {
+  SignalTypeParamSchema,
+  FilteredSignalsResponseSchema,
+  SignalsResponseSchema,
+  type SignalResult,
+} from '@/app/lib/schemas/signals';
 
 /**
- * Valid signal types that can be requested
+ * Valid signal types that can be requested (derived from Zod schema)
  */
-const VALID_SIGNAL_TYPES = ['rate', 'volatility', 'credit', 'housing', 'composite'];
+const VALID_SIGNAL_TYPES = SignalTypeParamSchema.options;
 
 /**
  * GET /api/signals
@@ -42,18 +48,33 @@ export async function GET(request: NextRequest) {
     // If no type specified, return all signals
     if (!typeParam) {
       const signals = await calculateAllSignals();
-      return NextResponse.json(signals, {
+
+      // Validate the full response with Zod
+      const validatedResponse = SignalsResponseSchema.parse(signals);
+
+      return NextResponse.json(validatedResponse, {
         headers: {
           'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
         },
       });
     }
 
-    // Parse requested signal types
-    const requestedTypes = typeParam.split(',').map(t => t.trim().toLowerCase());
+    // Parse and validate requested signal types with Zod
+    const requestedTypes = typeParam.split(',').map((t) => t.trim().toLowerCase());
 
-    // Validate all requested types
-    const invalidTypes = requestedTypes.filter(t => !VALID_SIGNAL_TYPES.includes(t));
+    // Validate each type against the schema
+    const validatedTypes: string[] = [];
+    const invalidTypes: string[] = [];
+
+    for (const type of requestedTypes) {
+      const result = SignalTypeParamSchema.safeParse(type);
+      if (result.success) {
+        validatedTypes.push(result.data);
+      } else {
+        invalidTypes.push(type);
+      }
+    }
+
     if (invalidTypes.length > 0) {
       return NextResponse.json(
         {
@@ -66,7 +87,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch requested signals in parallel
-    const signalPromises = requestedTypes.map(async (type) => {
+    const signalPromises = validatedTypes.map(async (type) => {
       const signal = await getSignalByType(type);
       return { type, signal };
     });
@@ -79,7 +100,7 @@ export async function GET(request: NextRequest) {
       signals[type] = signal;
     }
 
-    const response: FilteredSignalsResponse = {
+    const responseData = {
       signals,
       meta: {
         calculatedAt: new Date().toISOString(),
@@ -87,13 +108,28 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    return NextResponse.json(response, {
+    // Validate filtered response with Zod
+    const validatedResponse = FilteredSignalsResponseSchema.parse(responseData);
+
+    return NextResponse.json(validatedResponse, {
       headers: {
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
       },
     });
   } catch (error) {
     console.error('Error calculating signals:', error);
+
+    // Handle Zod validation errors specifically
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Signal validation error',
+          message: 'Signal data failed validation',
+          issues: error.issues,
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       {
