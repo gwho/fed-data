@@ -63,3 +63,37 @@ export {
   isValidSignalValue,
   getSignalInterpretation,
 } from './signals';
+
+// =============================================================================
+// Data Normalization Schemas
+// =============================================================================
+
+export {
+  // Schemas
+  DataFrequencySchema,
+  FillMethodSchema,
+  MergeConfigSchema,
+  DateRangeSchema,
+  MergedDataPointSchema,
+  SeriesInfoSchema,
+  MergedSeriesResultSchema,
+  SeriesSpecSchema,
+  NormalizeRequestSchema,
+  NormalizeResponseSchema,
+  NormalizeErrorSchema,
+  // Types
+  type DataFrequency,
+  type FillMethod,
+  type MergeConfig,
+  type DateRange,
+  type MergedDataPoint,
+  type SeriesInfo,
+  type MergedSeriesResult,
+  type SeriesSpec,
+  type NormalizeRequest,
+  type NormalizeResponse,
+  type NormalizeError,
+  // Helpers
+  validateNormalizeRequest,
+  validateMergedResult,
+} from './normalization';

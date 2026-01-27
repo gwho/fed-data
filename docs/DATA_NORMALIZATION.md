@@ -623,6 +623,170 @@ const tenYears = generateDateRange('2014-01-01', '2024-01-01');
 
 ---
 
+## Using the Normalization API
+
+The project exposes the normalization utilities via a REST API endpoint, making it easy to merge FRED series from any client.
+
+### Endpoint: POST /api/normalize
+
+**Request Format:**
+
+```json
+{
+  "series": [
+    { "seriesId": "FEDFUNDS", "key": "fedFunds" },
+    { "seriesId": "UNRATE", "key": "unemployment" }
+  ],
+  "config": {
+    "fillMethod": "forward",
+    "innerJoin": false
+  },
+  "dateRange": {
+    "start": "2023-01-01",
+    "end": "2024-01-01"
+  }
+}
+```
+
+**Response Format:**
+
+```json
+{
+  "data": [
+    { "date": "2023-01-03", "fedFunds": "4.33", "unemployment": "3.5" },
+    { "date": "2023-01-04", "fedFunds": "4.33", "unemployment": "3.5" }
+  ],
+  "seriesInfo": [
+    { "key": "fedFunds", "originalFrequency": "daily", "originalCount": 250, "filledCount": 0 },
+    { "key": "unemployment", "originalFrequency": "monthly", "originalCount": 12, "filledCount": 238 }
+  ],
+  "dateRange": { "start": "2023-01-03", "end": "2023-12-29" }
+}
+```
+
+### JavaScript/TypeScript Client Example
+
+```typescript
+async function getNormalizedData() {
+  const response = await fetch('/api/normalize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      series: [
+        { seriesId: 'VIXCLS', key: 'vix' },
+        { seriesId: 'UNRATE', key: 'unemployment' },
+        { seriesId: 'FEDFUNDS', key: 'fedFunds' },
+      ],
+      config: { fillMethod: 'forward' },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`API error: ${response.status}`);
+  }
+
+  const result = await response.json();
+
+  // Result contains aligned data for all series
+  console.log(`Merged ${result.data.length} data points`);
+  console.log(`Date range: ${result.dateRange.start} to ${result.dateRange.end}`);
+
+  // Check how much data was filled
+  for (const info of result.seriesInfo) {
+    const fillPercent = ((info.filledCount / result.data.length) * 100).toFixed(1);
+    console.log(`${info.key}: ${info.originalFrequency}, ${fillPercent}% filled`);
+  }
+
+  return result;
+}
+```
+
+### curl Example
+
+```bash
+# Merge VIX (daily) with Unemployment (monthly)
+curl -X POST http://localhost:3000/api/normalize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "series": [
+      { "seriesId": "VIXCLS", "key": "vix" },
+      { "seriesId": "UNRATE", "key": "unemployment" }
+    ],
+    "config": { "fillMethod": "forward" }
+  }' | jq .
+
+# With date range filter
+curl -X POST http://localhost:3000/api/normalize \
+  -H "Content-Type: application/json" \
+  -d '{
+    "series": [
+      { "seriesId": "FEDFUNDS", "key": "rate" }
+    ],
+    "config": { "fillMethod": "forward" },
+    "dateRange": { "start": "2024-01-01", "end": "2024-06-30" }
+  }' | jq .
+```
+
+### API Documentation (OPTIONS)
+
+```bash
+# Get API documentation
+curl -X OPTIONS http://localhost:3000/api/normalize | jq .
+```
+
+### Rate Limits
+
+- **20 requests per minute** per IP address
+- Normalization is computationally expensive, so rate limits are stricter than raw FRED data
+
+### Error Handling
+
+The API returns structured errors with Zod validation details:
+
+```json
+{
+  "error": "Invalid request body",
+  "details": [
+    {
+      "path": ["series", 0, "seriesId"],
+      "message": "Series ID is required"
+    }
+  ]
+}
+```
+
+**Common Error Codes:**
+- `400` - Invalid request (validation failed)
+- `429` - Rate limit exceeded
+- `502` - Failed to fetch FRED data
+- `500` - Internal server error
+
+---
+
+## Running Tests
+
+The normalization utilities have comprehensive unit tests:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests once (CI mode)
+npm run test:run
+
+# Run with coverage
+npm test -- --coverage
+```
+
+**Test file:** `app/lib/__tests__/dataUtils.test.ts`
+
+The tests also serve as executable documentation, demonstrating:
+- Edge cases (empty data, single points)
+- The "index-based merge bug" that forward-fill solves
+- Real-world scenarios with VIX and unemployment data
+
+---
+
 *Document created: January 2026*
 *Project: FRED Economic Indicators Dashboard*
 *Source: `app/lib/dataUtils.ts`*
