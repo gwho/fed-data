@@ -1,7 +1,13 @@
 import { fredCache } from './fredCache';
 
 const FRED_API_BASE = 'https://api.stlouisfed.org/fred';
-const API_KEY = process.env.NEXT_PUBLIC_FRED_API_KEY || '';
+
+/**
+ * Server-side API key (used by API routes)
+ * Falls back to NEXT_PUBLIC_ for backward compatibility
+ */
+const SERVER_API_KEY =
+  process.env.FRED_API_KEY || process.env.NEXT_PUBLIC_FRED_API_KEY || '';
 
 export interface FredSeriesData {
   date: string;
@@ -15,8 +21,67 @@ export interface FredObservation {
   value: string;
 }
 
-export async function getFredSeries(seriesId: string, startDate?: string): Promise<FredSeriesData[]> {
-  if (!API_KEY || API_KEY === 'your_fred_api_key_here') {
+/**
+ * Fetch FRED data via internal API proxy (for client-side use)
+ *
+ * This function calls our /api/fred endpoint which keeps the API key
+ * server-side, preventing exposure in the browser.
+ *
+ * @param seriesId - FRED series identifier (e.g., "FEDFUNDS")
+ * @param startDate - Optional start date for data range
+ * @returns Promise resolving to array of FredSeriesData
+ */
+async function getFredSeriesViaProxy(
+  seriesId: string,
+  startDate?: string
+): Promise<FredSeriesData[]> {
+  try {
+    const params = new URLSearchParams({ series: seriesId });
+    if (startDate) {
+      params.append('start', startDate);
+    }
+
+    const response = await fetch(`/api/fred?${params}`);
+
+    if (!response.ok) {
+      // If API returns 503 (no API key), fall back to sample data
+      if (response.status === 503) {
+        console.warn('FRED API key not configured. Using sample data.');
+        return getSampleData(seriesId);
+      }
+      console.error('FRED API proxy error:', response.status);
+      return getSampleData(seriesId);
+    }
+
+    const data = await response.json();
+    return data.observations || [];
+  } catch (error) {
+    console.error('Error fetching FRED data via proxy:', error);
+    return getSampleData(seriesId);
+  }
+}
+
+/**
+ * Fetch FRED data directly (for server-side use only)
+ *
+ * This function makes direct calls to the FRED API using the server-side
+ * API key. Only use this in API routes or server components.
+ *
+ * @param seriesId - FRED series identifier (e.g., "FEDFUNDS")
+ * @param startDate - Optional start date for data range
+ * @returns Promise resolving to array of FredSeriesData
+ */
+export async function getFredSeries(
+  seriesId: string,
+  startDate?: string
+): Promise<FredSeriesData[]> {
+  // On client-side, use the proxy
+  if (typeof window !== 'undefined') {
+    return getFredSeriesViaProxy(seriesId, startDate);
+  }
+
+  // Server-side: direct API call
+  if (!SERVER_API_KEY || SERVER_API_KEY === 'your_fred_api_key_here') {
     console.warn('FRED API key not configured. Using sample data.');
     return getSampleData(seriesId);
   }
@@ -24,7 +89,7 @@ export async function getFredSeries(seriesId: string, startDate?: string): Promi
   try {
     const params = new URLSearchParams({
       series_id: seriesId,
-      api_key: API_KEY,
+      api_key: SERVER_API_KEY,
       file_type: 'json',
     });
 
