@@ -97,3 +97,27 @@ export {
   validateNormalizeRequest,
   validateMergedResult,
 } from './normalization';
+
+// =============================================================================
+// Alert System Schemas
+// =============================================================================
+
+export {
+  // Schemas
+  AlertConditionSchema,
+  AlertConfigSchema,
+  CreateAlertSchema,
+  AlertTriggerSchema,
+  AlertsListResponseSchema,
+  AlertCheckResponseSchema,
+  // Types
+  type AlertCondition,
+  type AlertConfig,
+  type CreateAlert,
+  type AlertTrigger,
+  type AlertsListResponse,
+  type AlertCheckResponse,
+  // Helpers
+  validateCreateAlert,
+  validateAlertConfig,
+} from './alerts';
