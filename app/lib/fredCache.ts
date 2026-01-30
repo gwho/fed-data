@@ -53,7 +53,8 @@ class FredCache {
   private readonly STORAGE_PREFIX = 'fred_cache_';
 
   // Enable verbose logging for learning/debugging
-  private readonly DEBUG = true;
+  // Set to false for production to reduce console noise
+  private readonly DEBUG = process.env.NODE_ENV === 'development' && false;
 
   // Track cache performance
   private hitCount = 0;
