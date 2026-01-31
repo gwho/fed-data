@@ -1,8 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import React, { memo, useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import SignalGauge from './SignalGauge';
+
+/**
+ * SignalCard Component
+ *
+ * Displays a trading signal with gauge, explanation, and expandable indicators.
+ * Wrapped with React.memo to prevent unnecessary re-renders when the parent
+ * component updates but the signal data hasn't changed.
+ */
 
 /**
  * Signal result from the API
@@ -131,7 +139,7 @@ function formatTimeAgo(isoString: string): string {
   return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 }
 
-export default function SignalCard({ signal, showIndicators = true }: SignalCardProps) {
+const SignalCard = memo(function SignalCard({ signal, showIndicators = true }: SignalCardProps) {
   const [expanded, setExpanded] = useState(false);
   const styles = getInterpretationStyles(signal.interpretation);
 
@@ -197,4 +205,14 @@ export default function SignalCard({ signal, showIndicators = true }: SignalCard
       )}
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison: re-render only when signal data actually changes
+  return (
+    prevProps.signal.value === nextProps.signal.value &&
+    prevProps.signal.interpretation === nextProps.signal.interpretation &&
+    prevProps.signal.updatedAt === nextProps.signal.updatedAt &&
+    prevProps.showIndicators === nextProps.showIndicators
+  );
+});
+
+export default SignalCard;

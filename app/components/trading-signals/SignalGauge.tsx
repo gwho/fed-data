@@ -1,10 +1,15 @@
 'use client';
 
+import React, { memo } from 'react';
+
 /**
  * SignalGauge Component
  *
  * Visual gauge showing signal value on a -1 to +1 scale.
  * Color gradient: Red (bearish) → Yellow (neutral) → Green (bullish)
+ *
+ * Wrapped with React.memo to prevent unnecessary re-renders when
+ * parent components update but gauge props remain unchanged.
  */
 
 interface SignalGaugeProps {
@@ -13,7 +18,7 @@ interface SignalGaugeProps {
   showLabels?: boolean;
 }
 
-export default function SignalGauge({ value, size = 'md', showLabels = true }: SignalGaugeProps) {
+const SignalGauge = memo(function SignalGauge({ value, size = 'md', showLabels = true }: SignalGaugeProps) {
   // Clamp value between -1 and 1
   const clampedValue = Math.max(-1, Math.min(1, value));
 
@@ -66,4 +71,6 @@ export default function SignalGauge({ value, size = 'md', showLabels = true }: S
       )}
     </div>
   );
-}
+});
+
+export default SignalGauge;
