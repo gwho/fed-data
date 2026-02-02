@@ -16,6 +16,7 @@ import {
   MergedDataPoint 
 } from './utils/chartHelpers';
 import { CustomTooltip } from './components/CustomTooltip';
+import { useInflationData } from './hooks';
 
 interface ChartData {
   date: string;
@@ -51,15 +52,8 @@ export default function Home() {
   const [sp500Data, setSp500Data] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Inflation data
-  const [coreCpiData, setCoreCpiData] = useState<ChartData[]>([]);
-  const [pceData, setPceData] = useState<ChartData[]>([]);
-  const [corePceData, setCorePceData] = useState<ChartData[]>([]);
-  const [foodCpiData, setFoodCpiData] = useState<ChartData[]>([]);
-  const [energyCpiData, setEnergyCpiData] = useState<ChartData[]>([]);
-  const [housingCpiData, setHousingCpiData] = useState<ChartData[]>([]);
-  const [medicalCpiData, setMedicalCpiData] = useState<ChartData[]>([]);
-  const [inflationLoading, setInflationLoading] = useState(false);
+  // Inflation data - using custom hook
+  const inflation = useInflationData(activeSection === 'inflation');
 
   // Employment data
   const [laborForceData, setLaborForceData] = useState<ChartData[]>([]);
@@ -215,49 +209,7 @@ export default function Home() {
     loadData();
   }, []);
 
-  // Load inflation data when section changes
-  useEffect(() => {
-    async function loadInflationData() {
-      if (activeSection !== 'inflation') return;
-
-      setInflationLoading(true);
-      try {
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
-
-        const [coreCpi, pce, corePce, foodCpi, energyCpi, housingCpi, medicalCpi] = await Promise.all([
-          getFredSeriesCached('CPILFESL', oneYearAgoStr),
-          getFredSeriesCached('PCEPI', oneYearAgoStr),
-          getFredSeriesCached('PCEPILFE', oneYearAgoStr),
-          getFredSeriesCached('CPIUFDSL', oneYearAgoStr),
-          getFredSeriesCached('CPIENGSL', oneYearAgoStr),
-          getFredSeriesCached('CUSR0000SAH', oneYearAgoStr),
-          getFredSeriesCached('CPIMEDSL', oneYearAgoStr),
-        ]);
-
-        const formatData = (data: typeof coreCpi) =>
-          data.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }));
-
-        setCoreCpiData(formatData(coreCpi));
-        setPceData(formatData(pce));
-        setCorePceData(formatData(corePce));
-        setFoodCpiData(formatData(foodCpi));
-        setEnergyCpiData(formatData(energyCpi));
-        setHousingCpiData(formatData(housingCpi));
-        setMedicalCpiData(formatData(medicalCpi));
-      } catch (error) {
-        console.error('Error loading inflation data:', error);
-      } finally {
-        setInflationLoading(false);
-      }
-    }
-
-    loadInflationData();
-  }, [activeSection]);
+  // Inflation data loading is now handled by useInflationData hook
 
   // Load employment data when section changes
   useEffect(() => {
@@ -680,10 +632,10 @@ export default function Home() {
 
         {activeSection === 'inflation' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Headline vs Core CPI" loading={inflationLoading}>
+            <ChartCard title="Headline vs Core CPI" loading={inflation.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={coreCpiData.map((d, i) => ({
+                  data={inflation.data.coreCpi.map((d, i) => ({
                     date: d.date,
                     core: d.value,
                     headline: unemploymentData[i]?.value ? parseFloat(d.value.toString()) + 5 : d.value,
@@ -715,13 +667,13 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="PCE Inflation Measures" loading={inflationLoading}>
+            <ChartCard title="PCE Inflation Measures" loading={inflation.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={pceData.map((d, i) => ({
+                  data={inflation.data.pce.map((d, i) => ({
                     date: d.date,
                     pce: d.value,
-                    corePce: corePceData[i]?.value || 0,
+                    corePce: inflation.data.corePce[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -750,13 +702,13 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="CPI by Category: Food & Energy" loading={inflationLoading}>
+            <ChartCard title="CPI by Category: Food & Energy" loading={inflation.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={foodCpiData.map((d, i) => ({
+                  data={inflation.data.foodCpi.map((d, i) => ({
                     date: d.date,
                     food: d.value,
-                    energy: energyCpiData[i]?.value || 0,
+                    energy: inflation.data.energyCpi[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -785,13 +737,13 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="CPI by Category: Housing & Medical" loading={inflationLoading}>
+            <ChartCard title="CPI by Category: Housing & Medical" loading={inflation.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={housingCpiData.map((d, i) => ({
+                  data={inflation.data.housingCpi.map((d, i) => ({
                     date: d.date,
                     housing: d.value,
-                    medical: medicalCpiData[i]?.value || 0,
+                    medical: inflation.data.medicalCpi[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >

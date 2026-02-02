@@ -3,8 +3,8 @@ import path from 'path';
 
 export default defineConfig({
   test: {
-    // Environment
-    environment: 'node',
+    // Environment - use happy-dom for React component/hook tests, node for others
+    environment: 'happy-dom',
 
     // Include patterns
     include: ['app/**/*.test.ts', 'app/**/*.test.tsx'],
