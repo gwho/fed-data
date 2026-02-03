@@ -1,4 +1,5 @@
 import { fredCache } from './fredCache';
+import { fetchWithCoalescing, createFredCacheKey } from './requestCoalescer';
 
 const FRED_API_BASE = 'https://api.stlouisfed.org/fred';
 
@@ -119,10 +120,13 @@ export async function getFredSeries(
 }
 
 /**
- * Cached version of getFredSeries
+ * Cached version of getFredSeries with request coalescing
  *
- * This function wraps getFredSeries with caching to reduce API calls.
- * It checks the cache first, and only fetches from the API if needed.
+ * This function wraps getFredSeries with two layers of optimization:
+ *
+ * 1. **Caching** - Checks memory/localStorage before making API calls
+ * 2. **Request Coalescing** - If multiple components request the same data
+ *    simultaneously, they share ONE API call instead of making duplicates
  *
  * Cache behavior:
  * - First checks memory cache (instant)
@@ -130,26 +134,41 @@ export async function getFredSeries(
  * - Only calls API on cache miss
  * - Stores results in both caches for 24 hours
  *
+ * Coalescing behavior:
+ * - If a request for the same series is already in-flight, reuses that Promise
+ * - Prevents 5 simultaneous requests from making 5 API calls
+ *
  * @param seriesId - FRED series identifier (e.g., "FEDFUNDS", "UNRATE")
  * @param startDate - Optional start date for data range
  * @returns Promise resolving to array of FredSeriesData
  *
  * @example
- * // Instead of: const data = await getFredSeries('FEDFUNDS', '2024-01-01');
- * // Use:        const data = await getFredSeriesCached('FEDFUNDS', '2024-01-01');
+ * // These 3 calls share ONE API request (coalescing):
+ * const p1 = getFredSeriesCached('FEDFUNDS');
+ * const p2 = getFredSeriesCached('FEDFUNDS');
+ * const p3 = getFredSeriesCached('FEDFUNDS');
+ * const [data1, data2, data3] = await Promise.all([p1, p2, p3]);
+ * // data1 === data2 === data3, only 1 API call made
  */
 export async function getFredSeriesCached(seriesId: string, startDate?: string): Promise<FredSeriesData[]> {
-  // Step 1: Check cache first
+  // Step 1: Check cache first (fastest path)
   const cached = fredCache.get(seriesId, startDate);
   if (cached) {
     return cached;
   }
 
-  // Step 2: Cache miss - fetch from API
-  const data = await getFredSeries(seriesId, startDate);
+  // Step 2: Cache miss - use coalescing to deduplicate in-flight requests
+  const cacheKey = createFredCacheKey(seriesId, startDate);
 
-  // Step 3: Store in cache for next time
-  fredCache.set(seriesId, startDate, data);
+  const data = await fetchWithCoalescing(cacheKey, async () => {
+    // This function only runs ONCE even if called simultaneously
+    const result = await getFredSeries(seriesId, startDate);
+
+    // Store in cache for next time
+    fredCache.set(seriesId, startDate, result);
+
+    return result;
+  });
 
   return data;
 }
