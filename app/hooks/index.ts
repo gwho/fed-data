@@ -31,12 +31,10 @@ export type {
 
 // Domain hooks
 export { useInflationData } from './domain/useInflationData';
-
-// Additional domain hooks will be added in Phase 2.3+
-// export { useEmploymentData } from './domain/useEmploymentData';
-// export { useEconomicGrowthData } from './domain/useEconomicGrowthData';
-// export { useHousingData } from './domain/useHousingData';
-// export { useExchangeRatesData } from './domain/useExchangeRatesData';
-// export { useConsumerSpendingData } from './domain/useConsumerSpendingData';
-// export { useMarketIndicesData } from './domain/useMarketIndicesData';
-// export { useKeyIndicatorsData } from './domain/useKeyIndicatorsData';
+export { useEmploymentData } from './domain/useEmploymentData';
+export { useEconomicGrowthData } from './domain/useEconomicGrowthData';
+export { useHousingData } from './domain/useHousingData';
+export { useExchangeRatesData } from './domain/useExchangeRatesData';
+export { useConsumerSpendingData } from './domain/useConsumerSpendingData';
+export { useMarketIndicesData } from './domain/useMarketIndicesData';
+export { useKeyIndicatorsData } from './domain/useKeyIndicatorsData';
