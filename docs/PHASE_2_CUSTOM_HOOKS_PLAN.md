@@ -1016,4 +1016,481 @@ Phase 2 transforms your 1,817-line monolithic component into a clean, maintainab
 4. **Comprehensive testing** - >90% coverage
 5. **Pattern replication** - Establish with inflation, repeat 7 times
 
-Ready to start with Phase 2.1: Setup & Infrastructure! 🚀
+Phase 2.1 and 2.2 are complete. Phase 2.3 (remaining 7 hooks) is next.
+
+---
+
+# Phase 2.2 Review & Test Plan
+
+## What This Section Is
+
+Phase 2.2 is done: `useInflationData` is implemented, tested (13/13 pass), integrated into `page.tsx`, and pushed. This section does two things:
+
+1. **Review checklist** — a structured walkthrough to verify everything is correct before moving on
+2. **Beginner tutorial** — explains *why* every decision in Phase 2.2 was made, not just *what* was done
+
+---
+
+## Review Checklist
+
+Run these in order. Each item has a pass/fail criterion.
+
+### Step 1: Tests pass cleanly
+```bash
+npx vitest run app/hooks/__tests__/useInflationData.test.ts
+```
+**Pass:** 13 tests, 0 failures, 0 warnings.
+
+### Step 2: TypeScript compiles
+```bash
+npx tsc --noEmit
+```
+**Pass:** Zero errors output.
+
+### Step 3: Verify the test file covers what it claims
+
+Open `app/hooks/__tests__/useInflationData.test.ts` and confirm each `describe` block maps to a real risk:
+
+| describe block | Risk it guards against |
+|---|---|
+| Inactive State | Hook fires network requests even when the tab isn't visible |
+| Active State – Successful Loading | Hook fails to fetch or format data correctly |
+| Error Handling | An API crash brings down the whole UI |
+| Data Formatting | Dates or numbers come through as wrong types |
+| Activation/Deactivation | Switching tabs causes duplicate fetches or loses data |
+| Date Range | The start-date sent to FRED is wrong |
+
+### Step 4: Verify page.tsx integration is clean
+
+Open `app/page.tsx`. Search for these strings — **none** should exist:
+
+- `coreCpiData` (old state variable name)
+- `setPceData` (old setter)
+- `inflationLoading` (old loading flag)
+- `setInflationLoading`
+- `loadInflationData` (old useEffect function name)
+
+Search for these — **all** should exist exactly once:
+
+- `useInflationData`
+- `inflation.loading`
+- `inflation.data.coreCpi`
+- `inflation.error`
+
+### Step 5: Coverage config gap (known, non-blocking)
+
+`vitest.config.ts` has `coverage.include: ['app/lib/**/*.ts']`. This does **not** cover `app/hooks/**/*.ts`. Coverage reports will silently exclude the new hooks. This should be fixed before Phase 2.3, but it does not block the current review.
+
+---
+
+# Beginner Tutorial: Why Phase 2.2 Was Built This Way
+
+This tutorial walks through the actual code that was written and explains the reasoning behind each decision. You do not need to understand React deeply to follow it — each section starts with the problem, then shows how the code solves it.
+
+---
+
+## 1. Why extract a hook at all?
+
+### The problem (before)
+
+In `page.tsx`, the inflation section looked like this:
+
+```typescript
+// 8 separate state declarations
+const [coreCpiData, setCoreCpiData] = useState<ChartData[]>([]);
+const [pceData, setPceData] = useState<ChartData[]>([]);
+const [corePceData, setCorePceData] = useState<ChartData[]>([]);
+const [foodCpiData, setFoodCpiData] = useState<ChartData[]>([]);
+const [energyCpiData, setEnergyData] = useState<ChartData[]>([]);
+const [housingCpiData, setHousingCpiData] = useState<ChartData[]>([]);
+const [medicalCpiData, setMedicalCpiData] = useState<ChartData[]>([]);
+const [inflationLoading, setInflationLoading] = useState(false);
+
+// ~40-line useEffect that fetches, formats, and sets all 8 pieces of state
+useEffect(() => {
+  async function loadInflationData() {
+    if (activeSection !== 'inflation') return;
+    setInflationLoading(true);
+    try {
+      const [coreCpi, pce, ...] = await Promise.all([...]);
+      setCoreCpiData(formatData(coreCpi));
+      setPceData(formatData(pce));
+      // ... 5 more setters ...
+    } finally {
+      setInflationLoading(false);
+    }
+  }
+  loadInflationData();
+}, [activeSection]);
+```
+
+This pattern repeated 8 times (once per domain) in the same file. Page.tsx was 1,817 lines. The inflation block alone was ~50 lines of boilerplate that looked nearly identical to the employment block, the housing block, and so on.
+
+### The solution (after)
+
+```typescript
+// 1 line replaces 8 state declarations + 40-line useEffect
+const inflation = useInflationData(activeSection === 'inflation');
+
+// Usage in JSX is the same, just shorter:
+<Chart data={inflation.data.coreCpi} />
+```
+
+**Why this matters:** The loading logic, error handling, and data formatting are now *inside the hook*. If there's a bug in how inflation data is fetched, you look in one 91-line file instead of scrolling through a 1,800-line component. The same pattern can be copy-pasted for every other domain.
+
+---
+
+## 2. Why does the hook take `isActive: boolean` instead of reading `activeSection` directly?
+
+### The code
+
+```typescript
+// useInflationData.ts
+export function useInflationData(isActive: boolean): DomainHookResult<InflationData> {
+  // ...
+  useEffect(() => {
+    if (!isActive) return;  // ← early exit when not the active tab
+    // ... fetch data ...
+  }, [isActive, oneYearAgo, formatMonthly]);
+}
+
+// page.tsx — the caller decides what "active" means
+const inflation = useInflationData(activeSection === 'inflation');
+```
+
+### Why not this instead?
+
+```typescript
+// This is what you might write first — it works, but has a problem:
+export function useInflationData() {
+  const { activeSection } = useContext(SomeContext);  // reads global state directly
+  useEffect(() => {
+    if (activeSection !== 'inflation') return;
+    // ...
+  }, [activeSection]);
+}
+```
+
+The second version *couples* the hook to the app's navigation system. If you ever rename `'inflation'` to `'cpi'`, or use this hook in a different page that has no `activeSection`, the hook breaks. The `isActive` version is **reusable** — it doesn't care *why* it's active or inactive, just *whether* it is. The caller decides.
+
+This is called **separation of concerns**: the hook owns "how to fetch inflation data when told to", and the component owns "when inflation should be fetched".
+
+---
+
+## 3. Why `useMemo` in `useDateRange`?
+
+### The code
+
+```typescript
+// useDateRange.ts
+export function useDateRange() {
+  return useMemo(() => {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    // ... twoYearsAgo, threeYearsAgo ...
+    return {
+      oneYearAgo: oneYearAgo.toISOString().split('T')[0],  // "2025-02-03"
+      // ...
+    };
+  }, []);  // ← empty array = compute once, never again
+}
+```
+
+### Why not just calculate the date inline?
+
+```typescript
+// This looks simpler, but causes an infinite loop:
+export function useInflationData(isActive: boolean) {
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const dateStr = oneYearAgo.toISOString().split('T')[0];
+
+  useEffect(() => {
+    // fetch using dateStr ...
+  }, [isActive, dateStr]);  // ← dateStr is a NEW string every render
+}
+```
+
+Here's what happens without `useMemo`:
+
+1. Component renders → `dateStr` is created as a new string object
+2. `useEffect` sees its dependency (`dateStr`) changed (even though the value is the same, it's a new object)
+3. `useEffect` runs → fetches data → calls `setData` → triggers a re-render
+4. Go back to step 1. Infinite loop.
+
+`useMemo` with `[]` runs the calculation **once** and returns the same object on every subsequent render. The `useEffect` dependency check sees "same object" and does not re-run.
+
+---
+
+## 4. Why `useCallback` in `useDataFormatter`?
+
+### The code
+
+```typescript
+// useDataFormatter.ts
+const formatMonthly = useCallback((data: FredSeriesData[]): ChartData[] =>
+  data.map(d => ({
+    date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
+    value: parseFloat(d.value),
+  })), []);  // ← same empty-deps trick as useMemo
+```
+
+### Same problem as useDateRange, different shape
+
+`formatMonthly` is a **function**. Without `useCallback`, a new function object is created on every render. It's listed in `useInflationData`'s `useEffect` dependency array:
+
+```typescript
+useEffect(() => {
+  // ...
+}, [isActive, oneYearAgo, formatMonthly]);  // ← formatMonthly must be stable
+```
+
+If `formatMonthly` were recreated every render, `useEffect` would re-run every render. `useCallback` with `[]` ensures it's the same function reference across renders.
+
+**Rule of thumb:** If you put a function or object in a `useEffect` dependency array, it needs to be wrapped in `useCallback` or `useMemo`.
+
+---
+
+## 5. Why `DomainHookResult<T>` — what are generics?
+
+### The code
+
+```typescript
+// types.ts
+export interface DomainHookResult<T> {
+  data: T;           // ← T is a placeholder for any type
+  loading: boolean;
+  error: Error | null;
+}
+
+// Used like this:
+function useInflationData(...): DomainHookResult<InflationData> { ... }
+function useEmploymentData(...): DomainHookResult<EmploymentData> { ... }
+```
+
+### What `<T>` means
+
+`T` is a **type parameter** — a placeholder that gets filled in when you use the interface. Think of it as a template:
+
+- `DomainHookResult<InflationData>` becomes `{ data: InflationData; loading: boolean; error: Error | null }`
+- `DomainHookResult<EmploymentData>` becomes `{ data: EmploymentData; loading: boolean; error: Error | null }`
+
+### Why not write two separate interfaces?
+
+```typescript
+// Without generics — repetitive:
+interface InflationHookResult {
+  data: InflationData;
+  loading: boolean;
+  error: Error | null;
+}
+interface EmploymentHookResult {
+  data: EmploymentData;
+  loading: boolean;
+  error: Error | null;
+}
+// ... 6 more identical shapes ...
+```
+
+Generics eliminate that repetition. The `loading` and `error` pattern is the same for every hook — only `data` changes shape. One interface, parameterized.
+
+---
+
+## 6. Why `Promise.all` for the 7 API calls?
+
+### The code
+
+```typescript
+const [coreCpi, pce, corePce, foodCpi, energyCpi, housingCpi, medicalCpi] =
+  await Promise.all([
+    getFredSeriesCached('CPILFESL', oneYearAgo),
+    getFredSeriesCached('PCEPI', oneYearAgo),
+    getFredSeriesCached('PCEPILFE', oneYearAgo),
+    getFredSeriesCached('CPIUFDSL', oneYearAgo),
+    getFredSeriesCached('CPIENGSL', oneYearAgo),
+    getFredSeriesCached('CUSR0000SAH', oneYearAgo),
+    getFredSeriesCached('CPIMEDSL', oneYearAgo),
+  ]);
+```
+
+### Sequential vs parallel
+
+```typescript
+// Sequential — each call waits for the previous one to finish:
+const coreCpi = await getFredSeriesCached('CPILFESL', oneYearAgo);   // 200ms
+const pce     = await getFredSeriesCached('PCEPI', oneYearAgo);      // 200ms
+// Total: ~1400ms (7 × 200ms)
+
+// Parallel — all calls start at the same time:
+const [coreCpi, pce, ...] = await Promise.all([...]);
+// Total: ~200ms (the slowest single call)
+```
+
+`Promise.all` fires all 7 requests simultaneously. The `await` waits for **all** of them to finish before continuing. If any one rejects (throws an error), the whole `Promise.all` rejects — which is exactly what we want, because the `catch` block handles it uniformly.
+
+**Trade-off:** If one series fails, all 7 are lost. For a dashboard where partial data display would be better, you'd use `Promise.allSettled` instead. The current design chose simplicity: all-or-nothing, with a clear error state.
+
+---
+
+## 7. Why the `instanceof Error` check in the catch block?
+
+### The code
+
+```typescript
+} catch (err) {
+  setError(err instanceof Error ? err : new Error('Failed to load inflation data'));
+}
+```
+
+### Why not just `setError(err)`?
+
+TypeScript's `catch` block types `err` as `unknown` — it could be anything. JavaScript lets you `throw` any value:
+
+```typescript
+throw new Error('something broke');  // an Error object
+throw 'something broke';             // a plain string
+throw 42;                            // a number
+throw { code: 404, msg: 'nope' };   // a random object
+```
+
+The `error` state is typed as `Error | null`. If someone throws a string, you can't put it directly into state. The `instanceof` check:
+
+- If `err` is already an `Error` → use it as-is (preserves the original stack trace and message)
+- If `err` is anything else → wrap it in a `new Error(...)` with a safe fallback message
+
+This is a standard defensive pattern. The test suite verifies both branches:
+- `mockRejectedValue(new Error('API failure'))` → error message is `'API failure'`
+- `mockRejectedValue('String error')` → error message is `'Failed to load inflation data'`
+
+---
+
+## 8. Why happy-dom? Why not jsdom?
+
+### The test environment decision
+
+The tests use `renderHook` from `@testing-library/react`, which needs a browser-like environment (it needs `document`, `window`, etc.). Vitest can run in two environments:
+
+| Environment | What it is | Pros | Cons |
+|---|---|---|---|
+| `node` | No DOM at all | Fast, lightweight | `renderHook` crashes: "document is not defined" |
+| `jsdom` | Full DOM simulation | Mature, well-known | Heavy, slower, compatibility issues with React 19 |
+| `happy-dom` | Lighter DOM simulation | Fast, works with React 19 | Slightly less feature-complete than jsdom |
+
+This project uses React 19.2.3. `happy-dom` was chosen because it works out of the box with React 19 and `@testing-library/react` v16, and it's faster than jsdom. The tests here don't need obscure DOM APIs — just enough for React to mount hooks — so happy-dom is sufficient.
+
+---
+
+## 9. How do `renderHook` and `waitFor` work?
+
+### renderHook
+
+Custom hooks can't be called directly in a test — React hooks must be called inside a React component. `renderHook` creates a minimal wrapper component for you:
+
+```typescript
+const { result } = renderHook(() => useInflationData(true));
+//                              ↑ this is called inside a tiny component
+
+result.current.loading  // access the hook's return value
+```
+
+`result.current` always points to the hook's most recent return value. After state updates, `result.current` updates automatically.
+
+### waitFor
+
+State updates in React are **asynchronous**. When the hook's `useEffect` runs and eventually calls `setLoading(false)`, that state change doesn't happen instantly in the test. `waitFor` repeatedly checks its callback until it stops throwing:
+
+```typescript
+await waitFor(() => {
+  expect(result.current.loading).toBe(false);
+  // ↑ if this throws (loading is still true), waitFor retries
+  // once it passes, waitFor resolves
+});
+```
+
+Without `waitFor`, you'd assert on the *initial* state before the async fetch completes, and the test would fail or give false positives.
+
+---
+
+## 10. Comprehension Questions
+
+Work through these before moving to Phase 2.3. They test whether the *why* has landed, not just the *what*.
+
+**Q1:** A colleague suggests removing `useMemo` from `useDateRange` because "the date calculation is trivial and fast." Are they right? Explain what would happen.
+
+**Q2:** You want to reuse `useInflationData` in a mobile dashboard component that has no `activeSection` state — it always shows inflation data. How would you call the hook? Does it need to change?
+
+**Q3:** The error test mocks `getFredSeriesCached` to reject with `'String error'` (a plain string). Why does the test assert `error.message === 'Failed to load inflation data'` instead of `error.message === 'String error'`? Trace through the code to explain.
+
+**Q4:** If you changed `Promise.all` to sequential `await` calls, would the tests still pass? Would anything break? Think about timing.
+
+**Q5:** Why does the "Activation/Deactivation" test group deactivate and then reactivate the hook, instead of just calling it twice with `true`? What scenario is it actually testing?
+
+**Q6:** `useDataFormatter` wraps each function in `useCallback`. If you removed `useCallback` from `formatMonthly` but left it on the others, which tests would fail and why?
+
+---
+
+## 11. Suggested Learning Path
+
+These resources are ordered: start at the top, go as deep as your curiosity takes you. Each one is linked to the specific concept it teaches.
+
+### React Hooks — Core Concepts
+- **React official docs: "Building Your Own Hooks"** — https://react.dev/learn/reusing-logic-with-custom-hooks
+  - Read this first. It covers the rules of hooks, when to extract, and how hooks compose. The inflation hook is a direct application of everything on this page.
+- **React official docs: "useEffect"** — https://react.dev/reference/react/useEffect
+  - Pay close attention to the "dependencies" section. The `isActive`, `oneYearAgo`, `formatMonthly` dependency array in our hook is explained by this page.
+- **React official docs: "useMemo"** — https://react.dev/reference/react/useMemo
+  - Explains exactly the "new object every render" problem that `useDateRange` solves.
+- **React official docs: "useCallback"** — https://react.dev/reference/react/useCallback
+  - Same problem as useMemo, for functions. Maps directly to `useDataFormatter`.
+
+### TypeScript — Generics
+- **TypeScript Handbook: "Generics"** — https://www.typescriptlang.org/docs/handbook/2/generics.html
+  - Section "Generic Functions" and "Generic Interfaces" are what you need. `DomainHookResult<T>` is a generic interface.
+
+### Testing React Hooks
+- **@testing-library/react docs** — https://testing-library.com/docs/react-testing-library/api/#renderhook
+  - The `renderHook` API reference. Short and precise.
+- **Vitest docs: "Mocking"** — https://vitest.dev/guide/mocking.html
+  - Covers `vi.mock`, `vi.mocked`, `mockResolvedValue`, `mockRejectedValue` — all used in the inflation tests.
+- **Kent C. Dodds: "How to test custom React hooks"** — https://kentcdodds.com/blog/how-to-test-custom-react-hooks
+  - Practical walkthrough of the same patterns used here.
+
+### Async JavaScript
+- **MDN: Promise.all** — https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all
+  - Explains the parallel execution model and the "fail fast" behavior on rejection.
+
+---
+
+## 12. What to Verify Before Starting Phase 2.3
+
+Before implementing the next hook (`useEmploymentData`), confirm:
+
+- [ ] `npx vitest run` — all tests pass (not just inflation)
+- [ ] `npx tsc --noEmit` — zero TypeScript errors
+- [ ] You can explain (out loud or in writing) why `useMemo` and `useCallback` are in the shared hooks
+- [ ] You understand what `result.current` refers to in a `renderHook` test
+- [ ] You've read the "Building Your Own Hooks" React doc linked above
+- [ ] The vitest coverage `include` glob is updated to cover `app/hooks/**/*.ts` (fix this before Phase 2.3 so coverage reports are meaningful)
+
+---
+
+## 13. Phase 2.3 Execution Order
+
+When you're ready, implement hooks in this order (simple → complex):
+
+1. `useEmploymentData` — 4 series, monthly format. Closest to inflation. Good warm-up.
+2. `useHousingData` — 7 series, monthly format. Same pattern, more fields.
+3. `useExchangeRatesData` — 9 series, monthly format. More series, same structure.
+4. `useEconomicGrowthData` — 5 series, **mixed date ranges** (some `oneYearAgo`, some `twoYearsAgo`). First hook that uses multiple date ranges.
+5. `useKeyIndicatorsData` — 8 series, **no `isActive` param** (loads on mount). Breaks the pattern intentionally — understand why before implementing.
+6. `useMarketIndicesData` — uses `mergeSeriesByDate`. First hook with merged charts.
+7. `useConsumerSpendingData` — most complex: 10 series, multiple `mergeSeriesByDate`, transform function.
+
+For each hook, follow the same checklist:
+1. Create `app/hooks/domain/use<Name>.ts`
+2. Write `app/hooks/__tests__/use<Name>.test.ts`
+3. Update `app/hooks/index.ts` barrel export
+4. Integrate into `page.tsx` (replace old useState + useEffect)
+5. Run tests: `npx vitest run`
+6. Run tsc: `npx tsc --noEmit`
+7. Commit and push
