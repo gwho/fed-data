@@ -1,6 +1,7 @@
 'use client';
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import ChartCard from '../ChartCard';
 
 interface ChartData {
   date: string;
@@ -13,30 +14,14 @@ interface InterestRatesSectionProps {
   fedFundsData: ChartData[];
   mortgageData: ChartData[];
   loading: boolean;
+  error: Error | null;
 }
 
-function ChartCard({ title, children, loading }: { title: string; children: React.ReactNode; loading?: boolean }) {
-  return (
-    <div className="bg-[#D9D9D9] p-4 rounded-lg">
-      <h2 className="text-2xl font-bold text-black mb-4 font-[family-name:var(--font-geist-sans)]">
-        {title}
-      </h2>
-      <div className="bg-white rounded min-h-[400px] flex items-center justify-center">
-        {loading ? (
-          <div className="text-gray-500">Loading data...</div>
-        ) : (
-          children
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default function InterestRatesSection({ tenYearData, threeMonthData, fedFundsData, mortgageData, loading }: InterestRatesSectionProps) {
+export default function InterestRatesSection({ tenYearData, threeMonthData, fedFundsData, mortgageData, loading, error }: InterestRatesSectionProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
       {/* Chart 1: 10-Year Treasury */}
-      <ChartCard title="Interest Rates: Long-Term Government Bond Yields: 10-Year" loading={loading}>
+      <ChartCard title="Interest Rates: Long-Term Government Bond Yields: 10-Year" loading={loading} error={error}>
         {tenYearData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
             <LineChart data={tenYearData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
@@ -61,7 +46,7 @@ export default function InterestRatesSection({ tenYearData, threeMonthData, fedF
       </ChartCard>
 
       {/* Chart 2: 3-Month Treasury */}
-      <ChartCard title="Interest Rates: 3-Month or 90-Day Rates and Yields" loading={loading}>
+      <ChartCard title="Interest Rates: 3-Month or 90-Day Rates and Yields" loading={loading} error={error}>
         {threeMonthData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
             <LineChart data={threeMonthData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
@@ -86,7 +71,7 @@ export default function InterestRatesSection({ tenYearData, threeMonthData, fedF
       </ChartCard>
 
       {/* Chart 3: Federal Funds Rate */}
-      <ChartCard title="Federal Funds Effective Rate" loading={loading}>
+      <ChartCard title="Federal Funds Effective Rate" loading={loading} error={error}>
         {fedFundsData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
             <LineChart data={fedFundsData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
@@ -111,7 +96,7 @@ export default function InterestRatesSection({ tenYearData, threeMonthData, fedF
       </ChartCard>
 
       {/* Chart 4: 30-Year Mortgage Rate */}
-      <ChartCard title="30-Year Fixed Rate Mortgage Average" loading={loading}>
+      <ChartCard title="30-Year Fixed Rate Mortgage Average" loading={loading} error={error}>
         {mortgageData.length > 0 ? (
           <ResponsiveContainer width="100%" height={400}>
             <LineChart data={mortgageData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
