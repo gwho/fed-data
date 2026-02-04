@@ -1,26 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import Sidebar from './components/Sidebar';
 import InterestRatesSection from './components/interest-rates/InterestRatesSection';
 import TradingSignalsSection from './components/trading-signals/TradingSignalsSection';
-import { getFredSeriesCached, FredSeriesData } from './lib/fredApi';
-import { 
-  mergeSeriesByDate, 
-  formatTrillions, 
-  formatBillions, 
+import {
+  formatTrillions,
+  formatBillions,
   formatPercent,
   formatIndex,
   formatDateTick,
-  MergedDataPoint 
 } from './utils/chartHelpers';
 import { CustomTooltip } from './components/CustomTooltip';
-
-interface ChartData {
-  date: string;
-  value: number;
-}
+import {
+  useInflationData,
+  useEmploymentData,
+  useEconomicGrowthData,
+  useHousingData,
+  useExchangeRatesData,
+  useConsumerSpendingData,
+  useMarketIndicesData,
+  useKeyIndicatorsData,
+} from './hooks';
 
 function ChartCard({ title, children, loading }: { title: string; children: React.ReactNode; loading?: boolean }) {
   return (
@@ -41,537 +43,14 @@ function ChartCard({ title, children, loading }: { title: string; children: Reac
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState('key-indicators');
-  const [cpiData, setCpiData] = useState<ChartData[]>([]);
-  const [unemploymentData, setUnemploymentData] = useState<ChartData[]>([]);
-  const [tenYearData, setTenYearData] = useState<ChartData[]>([]);
-  const [threeMonthData, setThreeMonthData] = useState<ChartData[]>([]);
-  const [fedFundsData, setFedFundsData] = useState<ChartData[]>([]);
-  const [mortgageData, setMortgageData] = useState<ChartData[]>([]);
-  const [gdpData, setGdpData] = useState<ChartData[]>([]);
-  const [sp500Data, setSp500Data] = useState<ChartData[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Inflation data
-  const [coreCpiData, setCoreCpiData] = useState<ChartData[]>([]);
-  const [pceData, setPceData] = useState<ChartData[]>([]);
-  const [corePceData, setCorePceData] = useState<ChartData[]>([]);
-  const [foodCpiData, setFoodCpiData] = useState<ChartData[]>([]);
-  const [energyCpiData, setEnergyCpiData] = useState<ChartData[]>([]);
-  const [housingCpiData, setHousingCpiData] = useState<ChartData[]>([]);
-  const [medicalCpiData, setMedicalCpiData] = useState<ChartData[]>([]);
-  const [inflationLoading, setInflationLoading] = useState(false);
-
-  // Employment data
-  const [laborForceData, setLaborForceData] = useState<ChartData[]>([]);
-  const [payrollsData, setPayrollsData] = useState<ChartData[]>([]);
-  const [initialClaimsData, setInitialClaimsData] = useState<ChartData[]>([]);
-  const [hourlyEarningsData, setHourlyEarningsData] = useState<ChartData[]>([]);
-  const [employmentLoading, setEmploymentLoading] = useState(false);
-
-  // Economic Growth data
-  const [realGdpData, setRealGdpData] = useState<ChartData[]>([]);
-  const [nominalGdpData, setNominalGdpData] = useState<ChartData[]>([]);
-  const [industrialProdData, setIndustrialProdData] = useState<ChartData[]>([]);
-  const [retailSalesData, setRetailSalesData] = useState<ChartData[]>([]);
-  const [capacityUtilData, setCapacityUtilData] = useState<ChartData[]>([]);
-  const [economicGrowthLoading, setEconomicGrowthLoading] = useState(false);
-
-  // Housing data
-  const [homePriceData, setHomePriceData] = useState<ChartData[]>([]);
-  const [housingStartsData, setHousingStartsData] = useState<ChartData[]>([]);
-  const [buildingPermitsData, setBuildingPermitsData] = useState<ChartData[]>([]);
-  const [mortgageRateData, setMortgageRateData] = useState<ChartData[]>([]);
-  const [affordabilityData, setAffordabilityData] = useState<ChartData[]>([]);
-  const [newHomeSalesData, setNewHomeSalesData] = useState<ChartData[]>([]);
-  const [existingHomeSalesData, setExistingHomeSalesData] = useState<ChartData[]>([]);
-  const [housingLoading, setHousingLoading] = useState(false);
-
-  // Exchange Rates data
-  const [dollarIndexData, setDollarIndexData] = useState<ChartData[]>([]);
-  const [eurData, setEurData] = useState<ChartData[]>([]);
-  const [gbpData, setGbpData] = useState<ChartData[]>([]);
-  const [jpyData, setJpyData] = useState<ChartData[]>([]);
-  const [cnyData, setCnyData] = useState<ChartData[]>([]);
-  const [mxnData, setMxnData] = useState<ChartData[]>([]);
-  const [inrData, setInrData] = useState<ChartData[]>([]);
-  const [cadData, setCadData] = useState<ChartData[]>([]);
-  const [audData, setAudData] = useState<ChartData[]>([]);
-  const [exchangeRatesLoading, setExchangeRatesLoading] = useState(false);
-
-  // Consumer Spending data (using merged data approach)
-  const [pceChartData, setPceChartData] = useState<MergedDataPoint[]>([]);
-  const [retailChartData, setRetailChartData] = useState<MergedDataPoint[]>([]);
-  const [savingsChartData, setSavingsChartData] = useState<MergedDataPoint[]>([]);
-  const [sentimentChartData, setSentimentChartData] = useState<MergedDataPoint[]>([]);
-  const [consumerSpendingLoading, setConsumerSpendingLoading] = useState(false);
-
-  // Market Indices data
-  const [equityIndicesData, setEquityIndicesData] = useState<MergedDataPoint[]>([]);
-  const [vixData, setVixData] = useState<ChartData[]>([]);
-  const [creditSpreadData, setCreditSpreadData] = useState<MergedDataPoint[]>([]);
-  const [breadthData, setBreadthData] = useState<MergedDataPoint[]>([]);
-  const [marketIndicesLoading, setMarketIndicesLoading] = useState(false);
-
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        // Calculate date 3 years ago from today (changed from 5 years)
-        const threeYearsAgo = new Date();
-        threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
-        const threeYearsAgoStr = threeYearsAgo.toISOString().split('T')[0];
-
-        // Calculate date 1 year ago for other metrics
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
-
-        const [cpi, unemployment, gdp, sp500, tenYear, threeMonth, fedFunds, mortgage] = await Promise.all([
-          getFredSeriesCached('CPIAUCSL', threeYearsAgoStr),
-          getFredSeriesCached('UNRATE', oneYearAgoStr),
-          getFredSeriesCached('A191RL1Q225SBEA', oneYearAgoStr), // GDP
-          getFredSeriesCached('SP500', oneYearAgoStr),            // S&P 500
-          getFredSeriesCached('GS10', oneYearAgoStr),
-          getFredSeriesCached('TB3MS', oneYearAgoStr),
-          getFredSeriesCached('FEDFUNDS', oneYearAgoStr),         // Federal Funds Rate
-          getFredSeriesCached('MORTGAGE30US', oneYearAgoStr),     // 30-Year Mortgage
-        ]);
-
-        // Group CPI data by year and take January value for each year
-        const cpiByYear = new Map<string, number>();
-        cpi.forEach((d) => {
-          const date = new Date(d.date);
-          const year = date.getFullYear().toString();
-          const month = date.getMonth();
-          // Take January (month 0) value for each year
-          if (month === 0 && !cpiByYear.has(year)) {
-            cpiByYear.set(year, parseFloat(d.value));
-          }
-        });
-
-        setCpiData(
-          Array.from(cpiByYear.entries())
-            .map(([year, value]) => ({ date: year, value }))
-            .sort((a, b) => parseInt(a.date) - parseInt(b.date))
-        );
-
-        setUnemploymentData(
-          unemployment.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }))
-        );
-
-        // Format GDP data (quarterly, so less frequent)
-        setGdpData(
-          gdp.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-            value: parseFloat(d.value),
-          }))
-        );
-
-        // Format S&P 500 data
-        setSp500Data(
-          sp500.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }))
-        );
-
-        setTenYearData(
-          tenYear.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }))
-        );
-
-        setThreeMonthData(
-          threeMonth.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }))
-        );
-
-        setFedFundsData(
-          fedFunds.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }))
-        );
-
-        setMortgageData(
-          mortgage.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }))
-        );
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
-  }, []);
-
-  // Load inflation data when section changes
-  useEffect(() => {
-    async function loadInflationData() {
-      if (activeSection !== 'inflation') return;
-
-      setInflationLoading(true);
-      try {
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
-
-        const [coreCpi, pce, corePce, foodCpi, energyCpi, housingCpi, medicalCpi] = await Promise.all([
-          getFredSeriesCached('CPILFESL', oneYearAgoStr),
-          getFredSeriesCached('PCEPI', oneYearAgoStr),
-          getFredSeriesCached('PCEPILFE', oneYearAgoStr),
-          getFredSeriesCached('CPIUFDSL', oneYearAgoStr),
-          getFredSeriesCached('CPIENGSL', oneYearAgoStr),
-          getFredSeriesCached('CUSR0000SAH', oneYearAgoStr),
-          getFredSeriesCached('CPIMEDSL', oneYearAgoStr),
-        ]);
-
-        const formatData = (data: typeof coreCpi) =>
-          data.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }));
-
-        setCoreCpiData(formatData(coreCpi));
-        setPceData(formatData(pce));
-        setCorePceData(formatData(corePce));
-        setFoodCpiData(formatData(foodCpi));
-        setEnergyCpiData(formatData(energyCpi));
-        setHousingCpiData(formatData(housingCpi));
-        setMedicalCpiData(formatData(medicalCpi));
-      } catch (error) {
-        console.error('Error loading inflation data:', error);
-      } finally {
-        setInflationLoading(false);
-      }
-    }
-
-    loadInflationData();
-  }, [activeSection]);
-
-  // Load employment data when section changes
-  useEffect(() => {
-    async function loadEmploymentData() {
-      if (activeSection !== 'employment') return;
-
-      setEmploymentLoading(true);
-      try {
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
-
-        const [laborForce, payrolls, initialClaims, hourlyEarnings] = await Promise.all([
-          getFredSeriesCached('CIVPART', oneYearAgoStr),
-          getFredSeriesCached('PAYEMS', oneYearAgoStr),
-          getFredSeriesCached('ICSA', oneYearAgoStr),
-          getFredSeriesCached('AHETPI', oneYearAgoStr),
-        ]);
-
-        const formatData = (data: typeof laborForce) =>
-          data.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }));
-
-        setLaborForceData(formatData(laborForce));
-        setPayrollsData(formatData(payrolls));
-        setInitialClaimsData(formatData(initialClaims));
-        setHourlyEarningsData(formatData(hourlyEarnings));
-      } catch (error) {
-        console.error('Error loading employment data:', error);
-      } finally {
-        setEmploymentLoading(false);
-      }
-    }
-
-    loadEmploymentData();
-  }, [activeSection]);
-
-  // Load economic growth data when section changes
-  useEffect(() => {
-    async function loadEconomicGrowthData() {
-      if (activeSection !== 'economic-growth') return;
-
-      setEconomicGrowthLoading(true);
-      try {
-        const twoYearsAgo = new Date();
-        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-        const twoYearsAgoStr = twoYearsAgo.toISOString().split('T')[0];
-
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
-
-        const [realGdp, nominalGdp, industrialProd, retailSales, capacityUtil] = await Promise.all([
-          getFredSeriesCached('A191RL1Q225SBEA', twoYearsAgoStr),
-          getFredSeriesCached('A191RP1Q027SBEA', twoYearsAgoStr),
-          getFredSeriesCached('INDPRO', oneYearAgoStr),
-          getFredSeriesCached('RSAFS', oneYearAgoStr),
-          getFredSeriesCached('TCU', oneYearAgoStr),
-        ]);
-
-        // Format quarterly GDP data
-        const formatQuarterlyData = (data: typeof realGdp) =>
-          data.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-            value: parseFloat(d.value),
-          }));
-
-        // Format monthly data
-        const formatMonthlyData = (data: typeof industrialProd) =>
-          data.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }));
-
-        setRealGdpData(formatQuarterlyData(realGdp));
-        setNominalGdpData(formatQuarterlyData(nominalGdp));
-        setIndustrialProdData(formatMonthlyData(industrialProd));
-        setRetailSalesData(formatMonthlyData(retailSales));
-        setCapacityUtilData(formatMonthlyData(capacityUtil));
-      } catch (error) {
-        console.error('Error loading economic growth data:', error);
-      } finally {
-        setEconomicGrowthLoading(false);
-      }
-    }
-
-    loadEconomicGrowthData();
-  }, [activeSection]);
-
-  // Load exchange rates data when section changes
-  useEffect(() => {
-    async function loadExchangeRatesData() {
-      if (activeSection !== 'exchange-rates') return;
-
-      setExchangeRatesLoading(true);
-      try {
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
-
-        const [dollarIndex, eur, gbp, jpy, cny, mxn, inr, cad, aud] = await Promise.all([
-          getFredSeriesCached('DTWEXBGS', oneYearAgoStr),
-          getFredSeriesCached('DEXUSEU', oneYearAgoStr),
-          getFredSeriesCached('DEXUSUK', oneYearAgoStr),
-          getFredSeriesCached('DEXJPUS', oneYearAgoStr),
-          getFredSeriesCached('DEXCHUS', oneYearAgoStr),
-          getFredSeriesCached('DEXMXUS', oneYearAgoStr),
-          getFredSeriesCached('DEXINUS', oneYearAgoStr),
-          getFredSeriesCached('DEXCAUS', oneYearAgoStr),
-          getFredSeriesCached('DEXUSAL', oneYearAgoStr),
-        ]);
-
-        const formatData = (data: typeof dollarIndex) =>
-          data.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }));
-
-        setDollarIndexData(formatData(dollarIndex));
-        setEurData(formatData(eur));
-        setGbpData(formatData(gbp));
-        setJpyData(formatData(jpy));
-        setCnyData(formatData(cny));
-        setMxnData(formatData(mxn));
-        setInrData(formatData(inr));
-        setCadData(formatData(cad));
-        setAudData(formatData(aud));
-      } catch (error) {
-        console.error('Error loading exchange rates data:', error);
-      } finally {
-        setExchangeRatesLoading(false);
-      }
-    }
-
-    loadExchangeRatesData();
-  }, [activeSection]);
-
-  // Load housing data when section changes
-  useEffect(() => {
-    async function loadHousingData() {
-      if (activeSection !== 'housing') return;
-
-      setHousingLoading(true);
-      try {
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
-
-        const [homePrice, housingStarts, permits, mortgageRate, affordability, newSales, existingSales] = await Promise.all([
-          getFredSeriesCached('CSUSHPISA', oneYearAgoStr),
-          getFredSeriesCached('HOUST', oneYearAgoStr),
-          getFredSeriesCached('PERMIT', oneYearAgoStr),
-          getFredSeriesCached('MORTGAGE30US', oneYearAgoStr),
-          getFredSeriesCached('FIXHAI', oneYearAgoStr),
-          getFredSeriesCached('HSN1F', oneYearAgoStr),
-          getFredSeriesCached('EXHOSLUSM495S', oneYearAgoStr),
-        ]);
-
-        const formatData = (data: typeof homePrice) =>
-          data.map((d) => ({
-            date: new Date(d.date).toLocaleDateString('en-US', { month: 'short' }),
-            value: parseFloat(d.value),
-          }));
-
-        setHomePriceData(formatData(homePrice));
-        setHousingStartsData(formatData(housingStarts));
-        setBuildingPermitsData(formatData(permits));
-        setMortgageRateData(formatData(mortgageRate));
-        setAffordabilityData(formatData(affordability));
-        setNewHomeSalesData(formatData(newSales));
-        setExistingHomeSalesData(formatData(existingSales));
-      } catch (error) {
-        console.error('Error loading housing data:', error);
-      } finally {
-        setHousingLoading(false);
-      }
-    }
-
-    loadHousingData();
-  }, [activeSection]);
-
-  // Load consumer spending data when section changes (using proper date-based merging)
-  useEffect(() => {
-    async function loadConsumerSpendingData() {
-      if (activeSection !== 'consumer-spending') return;
-
-      setConsumerSpendingLoading(true);
-      try {
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
-
-        const [pceTotal, pceDurable, pceServices, totalRetail, foodServices, generalMerch, savingRate, dispIncome, sentiment, confidence] = await Promise.all([
-          getFredSeriesCached('PCE', oneYearAgoStr),
-          getFredSeriesCached('PCEDG', oneYearAgoStr),
-          getFredSeriesCached('PCESV', oneYearAgoStr),
-          getFredSeriesCached('RSAFS', oneYearAgoStr),
-          getFredSeriesCached('RSFSDP', oneYearAgoStr),
-          getFredSeriesCached('GAFO', oneYearAgoStr),
-          getFredSeriesCached('PSAVERT', oneYearAgoStr),
-          getFredSeriesCached('DSPI', oneYearAgoStr),
-          getFredSeriesCached('UMCSENT', oneYearAgoStr),
-          getFredSeriesCached('CSCICP03USM665S', oneYearAgoStr),
-        ]);
-
-        // Format raw data to ChartData
-        const formatData = (data: typeof pceTotal): ChartData[] =>
-          data.map((d) => ({
-            date: d.date, // Keep ISO format for proper merging
-            value: parseFloat(d.value),
-          }));
-
-        // Chart 1: PCE by Category - merge by date
-        const pceChart = mergeSeriesByDate([
-          { key: 'total', data: formatData(pceTotal) },
-          { key: 'durables', data: formatData(pceDurable) },
-          { key: 'services', data: formatData(pceServices) },
-        ]);
-        setPceChartData(pceChart);
-
-        // Chart 2: Retail Sales by Category - merge by date
-        const retailChart = mergeSeriesByDate([
-          { key: 'total', data: formatData(totalRetail) },
-          { key: 'foodServices', data: formatData(foodServices) },
-          { key: 'generalMerch', data: formatData(generalMerch) },
-        ]);
-        setRetailChartData(retailChart);
-
-        // Chart 3: Saving Rate vs Income - merge by date with transform
-        const savingsChart = mergeSeriesByDate([
-          { key: 'savingRate', data: formatData(savingRate) },
-          { 
-            key: 'disposableIncome', 
-            data: formatData(dispIncome),
-            transform: (v) => v / 1000 // Convert billions to trillions
-          },
-        ]);
-        setSavingsChartData(savingsChart);
-
-        // Chart 4: Sentiment & Confidence - merge by date
-        const sentimentChart = mergeSeriesByDate([
-          { key: 'sentiment', data: formatData(sentiment) },
-          { key: 'confidence', data: formatData(confidence) },
-        ]);
-        setSentimentChartData(sentimentChart);
-
-      } catch (error) {
-        console.error('Error loading consumer spending data:', error);
-      } finally {
-        setConsumerSpendingLoading(false);
-      }
-    }
-
-    loadConsumerSpendingData();
-  }, [activeSection]);
-
-  // Load market indices data when section changes
-  useEffect(() => {
-    async function loadMarketIndicesData() {
-      if (activeSection !== 'market-indices') return;
-
-      setMarketIndicesLoading(true);
-      try {
-        const threeYearsAgo = new Date();
-        threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
-        const threeYearsAgoStr = threeYearsAgo.toISOString().split('T')[0];
-
-        const [sp500Series, nasdaqSeries, dowSeries, vixSeries, baaSeries, aaaSeries, nyaSeries] = await Promise.all([
-          getFredSeriesCached('SP500', threeYearsAgoStr),
-          getFredSeriesCached('NASDAQCOM', threeYearsAgoStr),
-          getFredSeriesCached('DJIA', threeYearsAgoStr),
-          getFredSeriesCached('VIXCLS', threeYearsAgoStr),
-          getFredSeriesCached('BAA10Y', threeYearsAgoStr),
-          getFredSeriesCached('AAA10Y', threeYearsAgoStr),
-          getFredSeriesCached('NYA', threeYearsAgoStr),
-        ]);
-
-        const formatData = (data: FredSeriesData[]): ChartData[] =>
-          data.map((d) => ({
-            date: d.date,
-            value: parseFloat(d.value),
-          }));
-
-        const equityChart = mergeSeriesByDate([
-          { key: 'sp500', data: formatData(sp500Series) },
-          { key: 'nasdaq', data: formatData(nasdaqSeries) },
-          { key: 'dow', data: formatData(dowSeries) },
-        ]);
-        setEquityIndicesData(equityChart);
-
-        setVixData(formatData(vixSeries));
-
-        const creditChart = mergeSeriesByDate([
-          { key: 'baa', data: formatData(baaSeries) },
-          { key: 'aaa', data: formatData(aaaSeries) },
-        ]);
-        setCreditSpreadData(creditChart);
-
-        const breadthChart = mergeSeriesByDate([
-          { key: 'sp500', data: formatData(sp500Series) },
-          { key: 'nyse', data: formatData(nyaSeries) },
-        ]);
-        setBreadthData(breadthChart);
-      } catch (error) {
-        console.error('Error loading market indices data:', error);
-      } finally {
-        setMarketIndicesLoading(false);
-      }
-    }
-
-    loadMarketIndicesData();
-  }, [activeSection]);
+  const keyIndicators = useKeyIndicatorsData();
+  const inflation = useInflationData(activeSection === 'inflation');
+  const employment = useEmploymentData(activeSection === 'employment');
+  const economicGrowth = useEconomicGrowthData(activeSection === 'economic-growth');
+  const housing = useHousingData(activeSection === 'housing');
+  const exchangeRates = useExchangeRatesData(activeSection === 'exchange-rates');
+  const consumerSpending = useConsumerSpendingData(activeSection === 'consumer-spending');
+  const marketIndices = useMarketIndicesData(activeSection === 'market-indices');
 
   return (
     <div className="flex min-h-screen bg-[#F3F4F6]">
@@ -587,9 +66,9 @@ export default function Home() {
 
         {activeSection === 'key-indicators' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="CPI - last three years" loading={loading}>
+            <ChartCard title="CPI - last three years" loading={keyIndicators.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={cpiData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={keyIndicators.data.cpi} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={['dataMin - 10', 'dataMax + 10']} />
@@ -607,9 +86,9 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Infra-Annual Labor Statistics: Unemployment Rate Total" loading={loading}>
+            <ChartCard title="Infra-Annual Labor Statistics: Unemployment Rate Total" loading={keyIndicators.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={unemploymentData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={keyIndicators.data.unemployment} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={[3, 5]} />
@@ -627,10 +106,10 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Real GDP Growth Rate (Year-over-Year)" loading={loading}>
-              {gdpData.length > 0 ? (
+            <ChartCard title="Real GDP Growth Rate (Year-over-Year)" loading={keyIndicators.loading}>
+              {keyIndicators.data.gdp.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={gdpData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <LineChart data={keyIndicators.data.gdp} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis domain={[0, 5]} />
@@ -652,10 +131,10 @@ export default function Home() {
               )}
             </ChartCard>
 
-            <ChartCard title="S&P 500 Stock Market Index" loading={loading}>
-              {sp500Data.length > 0 ? (
+            <ChartCard title="S&P 500 Stock Market Index" loading={keyIndicators.loading}>
+              {keyIndicators.data.sp500.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={sp500Data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <LineChart data={keyIndicators.data.sp500} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis domain={['dataMin - 200', 'dataMax + 200']} />
@@ -680,13 +159,13 @@ export default function Home() {
 
         {activeSection === 'inflation' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Headline vs Core CPI" loading={inflationLoading}>
+            <ChartCard title="Headline vs Core CPI" loading={inflation.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={coreCpiData.map((d, i) => ({
+                  data={inflation.data.coreCpi.map((d, i) => ({
                     date: d.date,
                     core: d.value,
-                    headline: unemploymentData[i]?.value ? parseFloat(d.value.toString()) + 5 : d.value,
+                    headline: keyIndicators.data.unemployment[i]?.value ? parseFloat(d.value.toString()) + 5 : d.value,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -715,13 +194,13 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="PCE Inflation Measures" loading={inflationLoading}>
+            <ChartCard title="PCE Inflation Measures" loading={inflation.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={pceData.map((d, i) => ({
+                  data={inflation.data.pce.map((d, i) => ({
                     date: d.date,
                     pce: d.value,
-                    corePce: corePceData[i]?.value || 0,
+                    corePce: inflation.data.corePce[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -750,13 +229,13 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="CPI by Category: Food & Energy" loading={inflationLoading}>
+            <ChartCard title="CPI by Category: Food & Energy" loading={inflation.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={foodCpiData.map((d, i) => ({
+                  data={inflation.data.foodCpi.map((d, i) => ({
                     date: d.date,
                     food: d.value,
-                    energy: energyCpiData[i]?.value || 0,
+                    energy: inflation.data.energyCpi[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -785,13 +264,13 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="CPI by Category: Housing & Medical" loading={inflationLoading}>
+            <ChartCard title="CPI by Category: Housing & Medical" loading={inflation.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={housingCpiData.map((d, i) => ({
+                  data={inflation.data.housingCpi.map((d, i) => ({
                     date: d.date,
                     housing: d.value,
-                    medical: medicalCpiData[i]?.value || 0,
+                    medical: inflation.data.medicalCpi[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -824,13 +303,13 @@ export default function Home() {
 
         {activeSection === 'employment' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Unemployment Rate vs Labor Force Participation" loading={employmentLoading}>
+            <ChartCard title="Unemployment Rate vs Labor Force Participation" loading={employment.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={unemploymentData.map((d, i) => ({
+                  data={keyIndicators.data.unemployment.map((d, i) => ({
                     date: d.date,
                     unemployment: d.value,
-                    participation: laborForceData[i]?.value || 0,
+                    participation: employment.data.laborForce[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -862,9 +341,9 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Total Nonfarm Payrolls" loading={employmentLoading}>
+            <ChartCard title="Total Nonfarm Payrolls" loading={employment.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={payrollsData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={employment.data.payrolls} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={['dataMin - 500', 'dataMax + 500']} tickFormatter={(v) => `${(v/1000).toFixed(1)}M`} />
@@ -882,9 +361,9 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Initial Unemployment Claims (Weekly)" loading={employmentLoading}>
+            <ChartCard title="Initial Unemployment Claims (Weekly)" loading={employment.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={initialClaimsData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={employment.data.initialClaims} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={['dataMin - 10000', 'dataMax + 10000']} tickFormatter={(v) => `${(v/1000).toFixed(0)}K`} />
@@ -902,9 +381,9 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Average Hourly Earnings (Private Sector)" loading={employmentLoading}>
+            <ChartCard title="Average Hourly Earnings (Private Sector)" loading={employment.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={hourlyEarningsData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={employment.data.hourlyEarnings} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={['dataMin - 0.5', 'dataMax + 0.5']} tickFormatter={(v) => `$${v.toFixed(2)}`} />
@@ -926,13 +405,13 @@ export default function Home() {
 
         {activeSection === 'economic-growth' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Real vs Nominal GDP Growth Rate" loading={economicGrowthLoading}>
+            <ChartCard title="Real vs Nominal GDP Growth Rate" loading={economicGrowth.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={realGdpData.map((d, i) => ({
+                  data={economicGrowth.data.realGdp.map((d, i) => ({
                     date: d.date,
                     real: d.value,
-                    nominal: nominalGdpData[i]?.value || 0,
+                    nominal: economicGrowth.data.nominalGdp[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -963,9 +442,9 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Industrial Production Index" loading={economicGrowthLoading}>
+            <ChartCard title="Industrial Production Index" loading={economicGrowth.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={industrialProdData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={economicGrowth.data.industrialProd} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
@@ -984,9 +463,9 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Advance Monthly Retail Sales" loading={economicGrowthLoading}>
+            <ChartCard title="Advance Monthly Retail Sales" loading={economicGrowth.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={retailSalesData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={economicGrowth.data.retailSales} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis 
@@ -1007,9 +486,9 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Total Capacity Utilization" loading={economicGrowthLoading}>
+            <ChartCard title="Total Capacity Utilization" loading={economicGrowth.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={capacityUtilData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={economicGrowth.data.capacityUtil} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={[75, 85]} />
@@ -1032,9 +511,9 @@ export default function Home() {
 
         {activeSection === 'exchange-rates' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Trade-Weighted U.S. Dollar Index (Broad)" loading={exchangeRatesLoading}>
+            <ChartCard title="Trade-Weighted U.S. Dollar Index (Broad)" loading={exchangeRates.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={dollarIndexData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={exchangeRates.data.dollarIndex} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={['dataMin - 2', 'dataMax + 2']} />
@@ -1058,14 +537,14 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Major Currency Pairs vs USD" loading={exchangeRatesLoading}>
+            <ChartCard title="Major Currency Pairs vs USD" loading={exchangeRates.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={eurData.map((d, i) => ({
+                  data={exchangeRates.data.eur.map((d, i) => ({
                     date: d.date,
                     eur: d.value,
-                    gbp: gbpData[i]?.value || 0,
-                    jpy: jpyData[i]?.value ? jpyData[i].value / 100 : 0,
+                    gbp: exchangeRates.data.gbp[i]?.value || 0,
+                    jpy: exchangeRates.data.jpy[i]?.value ? exchangeRates.data.jpy[i].value / 100 : 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -1114,14 +593,14 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Emerging Market Currencies vs USD" loading={exchangeRatesLoading}>
+            <ChartCard title="Emerging Market Currencies vs USD" loading={exchangeRates.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={cnyData.map((d, i) => ({
+                  data={exchangeRates.data.cny.map((d, i) => ({
                     date: d.date,
                     cny: d.value,
-                    mxn: mxnData[i]?.value || 0,
-                    inr: inrData[i]?.value ? inrData[i].value / 10 : 0,
+                    mxn: exchangeRates.data.mxn[i]?.value || 0,
+                    inr: exchangeRates.data.inr[i]?.value ? exchangeRates.data.inr[i].value / 10 : 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -1170,13 +649,13 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Commodity Currencies vs USD" loading={exchangeRatesLoading}>
+            <ChartCard title="Commodity Currencies vs USD" loading={exchangeRates.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={cadData.map((d, i) => ({
+                  data={exchangeRates.data.cad.map((d, i) => ({
                     date: d.date,
                     cad: d.value,
-                    aud: audData[i]?.value || 0,
+                    aud: exchangeRates.data.aud[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -1210,9 +689,9 @@ export default function Home() {
 
         {activeSection === 'housing' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="S&P/Case-Shiller U.S. National Home Price Index" loading={housingLoading}>
+            <ChartCard title="S&P/Case-Shiller U.S. National Home Price Index" loading={housing.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={homePriceData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={housing.data.homePrice} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
@@ -1236,13 +715,13 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Housing Starts vs Building Permits" loading={housingLoading}>
+            <ChartCard title="Housing Starts vs Building Permits" loading={housing.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={housingStartsData.map((d, i) => ({
+                  data={housing.data.housingStarts.map((d, i) => ({
                     date: d.date,
                     starts: d.value,
-                    permits: buildingPermitsData[i]?.value || 0,
+                    permits: housing.data.buildingPermits[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -1278,13 +757,13 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="30-Year Mortgage Rate vs Housing Affordability" loading={housingLoading}>
+            <ChartCard title="30-Year Mortgage Rate vs Housing Affordability" loading={housing.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={mortgageRateData.map((d, i) => ({
+                  data={housing.data.mortgageRate.map((d, i) => ({
                     date: d.date,
                     rate: d.value,
-                    affordability: affordabilityData[i]?.value || 0,
+                    affordability: housing.data.affordability[i]?.value || 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -1334,13 +813,13 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="New vs Existing Home Sales" loading={housingLoading}>
+            <ChartCard title="New vs Existing Home Sales" loading={housing.loading}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
-                  data={newHomeSalesData.map((d, i) => ({
+                  data={housing.data.newHomeSales.map((d, i) => ({
                     date: d.date,
                     newSales: d.value,
-                    existingSales: existingHomeSalesData[i]?.value ? existingHomeSalesData[i].value * 1000 : 0,
+                    existingSales: housing.data.existingHomeSales[i]?.value ? housing.data.existingHomeSales[i].value * 1000 : 0,
                   }))}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
@@ -1380,9 +859,9 @@ export default function Home() {
         {activeSection === 'consumer-spending' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
             {/* Chart 1: Personal Consumption Expenditures by Type */}
-            <ChartCard title="Personal Consumption Expenditures by Category" loading={consumerSpendingLoading}>
+            <ChartCard title="Personal Consumption Expenditures by Category" loading={consumerSpending.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={pceChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={consumerSpending.data.pceChart} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date" 
@@ -1435,9 +914,9 @@ export default function Home() {
             </ChartCard>
 
             {/* Chart 2: Retail Sales by Category */}
-            <ChartCard title="Retail Sales by Category" loading={consumerSpendingLoading}>
+            <ChartCard title="Retail Sales by Category" loading={consumerSpending.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={retailChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={consumerSpending.data.retailChart} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date"
@@ -1488,9 +967,9 @@ export default function Home() {
             </ChartCard>
 
             {/* Chart 3: Personal Saving Rate vs Disposable Income */}
-            <ChartCard title="Personal Saving Rate vs Disposable Income" loading={consumerSpendingLoading}>
+            <ChartCard title="Personal Saving Rate vs Disposable Income" loading={consumerSpending.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={savingsChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={consumerSpending.data.savingsChart} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date"
@@ -1546,9 +1025,9 @@ export default function Home() {
             </ChartCard>
 
             {/* Chart 4: Consumer Sentiment & Confidence Indices */}
-            <ChartCard title="Consumer Sentiment & Confidence Indices" loading={consumerSpendingLoading}>
+            <ChartCard title="Consumer Sentiment & Confidence Indices" loading={consumerSpending.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={sentimentChartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={consumerSpending.data.sentimentChart} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date"
@@ -1607,9 +1086,9 @@ export default function Home() {
 
         {activeSection === 'market-indices' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Equity Index Levels" loading={marketIndicesLoading}>
+            <ChartCard title="Equity Index Levels" loading={marketIndices.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={equityIndicesData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={marketIndices.data.equityIndices} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" tickFormatter={formatDateTick} />
                   <YAxis tickFormatter={(value) => formatIndex(Number(value))} />
@@ -1658,9 +1137,9 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Volatility Index (VIX)" loading={marketIndicesLoading}>
+            <ChartCard title="Volatility Index (VIX)" loading={marketIndices.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={vixData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={marketIndices.data.vix} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" tickFormatter={formatDateTick} />
                   <YAxis tickFormatter={(value) => formatIndex(Number(value))} />
@@ -1688,9 +1167,9 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Corporate Bond Spreads (vs 10Y Treasury)" loading={marketIndicesLoading}>
+            <ChartCard title="Corporate Bond Spreads (vs 10Y Treasury)" loading={marketIndices.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={creditSpreadData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={marketIndices.data.creditSpread} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" tickFormatter={formatDateTick} />
                   <YAxis tickFormatter={(value) => formatPercent(Number(value))} />
@@ -1730,9 +1209,9 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Market Breadth: NYSE Composite vs S&P 500" loading={marketIndicesLoading}>
+            <ChartCard title="Market Breadth: NYSE Composite vs S&P 500" loading={marketIndices.loading}>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={breadthData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <LineChart data={marketIndices.data.breadth} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" tickFormatter={formatDateTick} />
                   <YAxis tickFormatter={(value) => formatIndex(Number(value))} />
@@ -1773,11 +1252,11 @@ export default function Home() {
 
         {activeSection === 'interest-rates' && (
           <InterestRatesSection
-            tenYearData={tenYearData}
-            threeMonthData={threeMonthData}
-            fedFundsData={fedFundsData}
-            mortgageData={mortgageData}
-            loading={loading}
+            tenYearData={keyIndicators.data.tenYear}
+            threeMonthData={keyIndicators.data.threeMonth}
+            fedFundsData={keyIndicators.data.fedFunds}
+            mortgageData={keyIndicators.data.mortgage}
+            loading={keyIndicators.loading}
           />
         )}
 
