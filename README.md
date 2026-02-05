@@ -125,6 +125,17 @@ Built from a Figma mockup with:
 - Blue accent color for active navigation items
 - Responsive grid layout (2x2 on desktop, stacked on mobile)
 
+## Documentation
+
+For detailed guides on various topics, see the [docs](./docs) directory:
+
+- **[Git Merge Conflict Resolution](./docs/GIT_MERGE_CONFLICT_RESOLUTION.md)** - Comprehensive guide on resolving merge conflicts and merging to main branch
+- [API Security](./docs/API_SECURITY.md) - API security best practices
+- [Caching Implementation](./docs/CACHING_IMPLEMENTATION.md) - Data caching strategy
+- [Data Normalization](./docs/DATA_NORMALIZATION.md) - How data is normalized and merged
+- [Performance Optimizations](./docs/PERFORMANCE_OPTIMIZATIONS.md) - Performance improvements
+- [Type Safety with Zod](./docs/TYPE_SAFETY_ZOD.md) - Runtime type validation
+
 ## GitHub Actions & CI/CD
 
 This repository includes automated workflows:
