@@ -13,8 +13,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      include: ['app/lib/**/*.ts'],
-      exclude: ['app/lib/**/*.test.ts', 'app/lib/schemas/**'],
+      include: ['app/lib/**/*.ts', 'app/hooks/**/*.ts', 'app/components/**/*.tsx'],
+      exclude: ['app/lib/**/*.test.ts', 'app/lib/schemas/**', 'app/**/*.test.ts', 'app/**/*.test.tsx'],
     },
 
     // Globals (describe, it, expect available without import)
