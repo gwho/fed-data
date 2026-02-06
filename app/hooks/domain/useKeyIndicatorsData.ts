@@ -5,9 +5,63 @@ import { useDataFormatter } from '../shared/useDataFormatter';
 import { DomainHookResult, KeyIndicatorsData } from '../shared/types';
 
 /**
- * Custom hook for loading key indicator data.
- * Unlike other domain hooks, this one loads on mount (no isActive parameter)
- * because key indicators are always pre-fetched for the dashboard overview.
+ * Custom hook for loading and managing key economic indicators
+ *
+ * **Special Pattern: No `isActive` Parameter**
+ *
+ * Unlike other domain hooks, this hook loads **immediately on component mount** regardless
+ * of which section the user is viewing. This is intentional because:
+ * 1. Key indicators appear in the always-visible "Interest Rates" section at the top of the page
+ * 2. Preloading improves perceived performance — data is ready when the user first sees the page
+ * 3. These are the most frequently accessed metrics (CPI, unemployment, interest rates)
+ *
+ * **Special Logic: CPI Yearly Aggregation**
+ *
+ * CPI data is aggregated to show only January values for each year (lines 47-60):
+ * - Fetch 3 years of monthly CPI data
+ * - Group by year, take only the January (month 0) value for each year
+ * - This creates a compact yearly view instead of 36 monthly data points
+ *
+ * **Series Fetched (8 total):**
+ * - `CPIAUCSL` - Consumer Price Index for All Urban Consumers: All Items (Index 1982-1984=100) — **3 years**
+ * - `UNRATE` - Unemployment Rate (%) — **1 year**
+ * - `GS10` - 10-Year Treasury Constant Maturity Rate (%) — **1 year**
+ * - `TB3MS` - 3-Month Treasury Bill Secondary Market Rate (%) — **1 year**
+ * - `FEDFUNDS` - Federal Funds Effective Rate (%) — **1 year**
+ * - `MORTGAGE30US` - 30-Year Fixed Rate Mortgage Average (%) — **1 year**
+ * - `A191RL1Q225SBEA` - Real Gross Domestic Product (Quarterly, % change) — **1 year**
+ * - `SP500` - S&P 500 Index — **1 year**
+ *
+ * **Data Format:**
+ * - CPI: Yearly values (e.g., "2023", "2024", "2025")
+ * - GDP: Quarterly formatting (e.g., "Q1 '24", "Q2 '24")
+ * - All others: Monthly formatting (e.g., "Jan", "Feb")
+ *
+ * **Caching:** Uses `getFredSeriesCached` for performance
+ *
+ * @returns Object containing key indicator data, loading state, and error state
+ *          (no isActive parameter — always loads on mount)
+ *
+ * @example
+ * ```tsx
+ * // In a component that's always visible (e.g., header, top section)
+ * const keyIndicators = useKeyIndicatorsData();
+ *
+ * if (keyIndicators.loading) return <LoadingSpinner />;
+ * if (keyIndicators.error) return <ErrorMessage error={keyIndicators.error} />;
+ *
+ * return (
+ *   <InterestRatesSection
+ *     cpi={keyIndicators.data.cpi}
+ *     tenYearData={keyIndicators.data.tenYear}
+ *     threeMonthData={keyIndicators.data.threeMonth}
+ *     fedFundsData={keyIndicators.data.fedFunds}
+ *     mortgageData={keyIndicators.data.mortgage}
+ *     loading={keyIndicators.loading}
+ *     error={keyIndicators.error}
+ *   />
+ * );
+ * ```
  */
 export function useKeyIndicatorsData(): DomainHookResult<KeyIndicatorsData> {
   const [data, setData] = useState<KeyIndicatorsData>({
