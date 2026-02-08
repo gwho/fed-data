@@ -1257,6 +1257,7 @@ export default function Home() {
             fedFundsData={keyIndicators.data.fedFunds}
             mortgageData={keyIndicators.data.mortgage}
             loading={keyIndicators.loading}
+            error={keyIndicators.error}
           />
         )}
 

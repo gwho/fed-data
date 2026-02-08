@@ -114,11 +114,11 @@ describe('fetchWithCoalescing - deduplication', () => {
 
     // Start 5 "simultaneous" requests
     const promises = [
-      fetchWithCoalescing('same-key', fetcher),
-      fetchWithCoalescing('same-key', fetcher),
-      fetchWithCoalescing('same-key', fetcher),
-      fetchWithCoalescing('same-key', fetcher),
-      fetchWithCoalescing('same-key', fetcher),
+      fetchWithCoalescing<{ data: string; callNumber: number }>('same-key', fetcher),
+      fetchWithCoalescing<{ data: string; callNumber: number }>('same-key', fetcher),
+      fetchWithCoalescing<{ data: string; callNumber: number }>('same-key', fetcher),
+      fetchWithCoalescing<{ data: string; callNumber: number }>('same-key', fetcher),
+      fetchWithCoalescing<{ data: string; callNumber: number }>('same-key', fetcher),
     ];
 
     // All promises should resolve to the same result
@@ -168,12 +168,12 @@ describe('fetchWithCoalescing - deduplication', () => {
     });
 
     // First request
-    const result1 = await fetchWithCoalescing('reusable-key', fetcher);
+    const result1 = await fetchWithCoalescing<{ callNumber: number }>('reusable-key', fetcher);
     expect(result1.callNumber).toBe(1);
     expect(isInFlight('reusable-key')).toBe(false);
 
     // Second request (after first completes) - should make new call
-    const result2 = await fetchWithCoalescing('reusable-key', fetcher);
+    const result2 = await fetchWithCoalescing<{ callNumber: number }>('reusable-key', fetcher);
     expect(result2.callNumber).toBe(2);
 
     // Fetcher should have been called twice total

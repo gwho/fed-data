@@ -5,6 +5,70 @@ import { useDateRange } from '../shared/useDateRange';
 import { useDataFormatter } from '../shared/useDataFormatter';
 import { DomainHookResult, ConsumerSpendingData } from '../shared/types';
 
+/**
+ * Custom hook for loading and managing consumer spending data
+ *
+ * Fetches 10 spending-related series from FRED API and merges them into 4 multi-series charts.
+ * Uses `mergeSeriesByDate` to align series with different observation dates on the same chart.
+ *
+ * **Why mergeSeriesByDate?**
+ * Consumer spending metrics come from different sources with different publication schedules:
+ * - PCE (Personal Consumption Expenditures) is published monthly
+ * - Retail sales may have revisions at different dates
+ * - Sentiment surveys are typically mid-month
+ *
+ * `mergeSeriesByDate` ensures all series in a chart share the same date keys, filling gaps
+ * where needed. This prevents Recharts errors and creates clean multi-line visualizations.
+ *
+ * **Series Fetched (10 total → 4 merged charts):**
+ *
+ * **Chart 1 - PCE by Category:**
+ * - `PCE` - Personal Consumption Expenditures Total (billions of dollars)
+ * - `PCEDG` - PCE Durable Goods (billions of dollars)
+ * - `PCESV` - PCE Services (billions of dollars)
+ *
+ * **Chart 2 - Retail Sales by Category:**
+ * - `RSAFS` - Retail and Food Services Total (millions of dollars)
+ * - `RSFSDP` - Food Services and Drinking Places (millions of dollars)
+ * - `GAFO` - General Merchandise Stores (millions of dollars)
+ *
+ * **Chart 3 - Savings Rate vs Disposable Income:**
+ * - `PSAVERT` - Personal Saving Rate (%)
+ * - `DSPI` - Disposable Personal Income (billions of dollars, **÷1000 to scale to trillions**)
+ *
+ * **Chart 4 - Consumer Sentiment:**
+ * - `UMCSENT` - University of Michigan Consumer Sentiment Index (Index 1966:Q1=100)
+ * - `CSCICP03USM665S` - OECD Consumer Confidence Index (Amplitude Adjusted)
+ *
+ * **Transform Functions:**
+ * - Disposable income is divided by 1000 (billions → trillions) to fit on the same chart
+ *   scale as the saving rate percentage. Without this transform, the income line (~18,000
+ *   billion) would dwarf the saving rate (3-5%) and make the chart unreadable.
+ *
+ * **Data Format:** All series use ISO date format (YYYY-MM-DD) required by `mergeSeriesByDate`
+ * **Date Range:** Last 12 months from current date
+ * **Caching:** Uses `getFredSeriesCached` for performance
+ *
+ * @param isActive - Whether the consumer spending section is currently visible
+ * @returns Object containing 4 merged chart datasets, loading state, and error state
+ *
+ * @example
+ * ```tsx
+ * const spending = useConsumerSpendingData(activeSection === 'consumer-spending');
+ *
+ * if (spending.loading) return <LoadingSpinner />;
+ * if (spending.error) return <ErrorMessage error={spending.error} />;
+ *
+ * // Each chart is an array of MergedDataPoint with aligned dates
+ * return (
+ *   <LineChart data={spending.data.pceChart}>
+ *     <Line dataKey="total" name="Total PCE" />
+ *     <Line dataKey="durables" name="Durable Goods" />
+ *     <Line dataKey="services" name="Services" />
+ *   </LineChart>
+ * );
+ * ```
+ */
 export function useConsumerSpendingData(isActive: boolean): DomainHookResult<ConsumerSpendingData> {
   const [data, setData] = useState<ConsumerSpendingData>({
     pceChart: [],
@@ -57,6 +121,8 @@ export function useConsumerSpendingData(isActive: boolean): DomainHookResult<Con
           {
             key: 'disposableIncome',
             data: formatIsoDate(dispIncome),
+            // Convert billions → trillions (÷1000) to fit on same Y-axis scale as saving rate %
+            // Without this, disposable income (~18,000 billion) would dwarf saving rate (3-5%)
             transform: (v: number) => v / 1000,
           },
         ]);
