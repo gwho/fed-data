@@ -10,9 +10,6 @@
 7. [Adding New Hooks](#adding-new-hooks)
 8. [Common Pitfalls](#common-pitfalls)
 
-> **New to hooks?** See [`TUTORIALS.md`](./TUTORIALS.md) for beginner step-by-step
-> walkthroughs of each pattern with rationale, pitfalls, and comprehension questions.
-
 ---
 
 ## Overview
@@ -800,71 +797,7 @@ results[0].someField  // TypeScript knows the type
 If you're stuck:
 1. Check the existing hooks for examples (start with `useInflationData` — it's the reference implementation)
 2. Read the tests to understand expected behavior
-3. See [`TUTORIALS.md`](./TUTORIALS.md) for beginner walkthroughs of each pattern
-
----
-
-## Memoization Audit
-
-All hooks audited for correct `useMemo` / `useCallback` usage (Phase 2.5):
-
-| Check | File | Result |
-|-------|------|--------|
-| `useDateRange` uses `useMemo` with `[]` deps | `shared/useDateRange.ts` | ✅ Pass |
-| `formatMonthly` uses `useCallback` with `[]` deps | `shared/useDataFormatter.ts` | ✅ Pass |
-| `formatQuarterly` uses `useCallback` with `[]` deps | `shared/useDataFormatter.ts` | ✅ Pass |
-| `formatIsoDate` uses `useCallback` with `[]` deps | `shared/useDataFormatter.ts` | ✅ Pass |
-| All domain hooks include formatters in `useEffect` deps | All 8 domain hooks | ✅ Pass |
-| All domain hooks include date ranges in `useEffect` deps | All 8 domain hooks | ✅ Pass |
-| No unnecessary memoization of primitive values | All files | ✅ Pass |
-
-All 7 checks pass. No memoization bugs found.
-
----
-
-## Future Performance Optimizations
-
-These optimizations are documented but **not yet implemented**. Consider them if:
-- Lighthouse performance score drops below 90
-- Bundle size exceeds 500 KB
-- Users report slow initial page load
-
-### 1. React.memo on ChartCard
-
-**Current:** `ChartCard` re-renders whenever any parent state changes.
-
-**Optimized:**
-```typescript
-// Current
-export default function ChartCard({ title, children, loading }) { ... }
-
-// Optimized — only re-renders when props actually change
-export default React.memo(function ChartCard({ title, children, loading }) { ... });
-```
-
-**Impact:** Low — `ChartCard` is lightweight. Implement only if profiling confirms
-it is a render bottleneck.
-
-### 2. Promise.allSettled for Partial Data
-
-**Current:** If one FRED series fails, the whole hook errors (`Promise.all` is
-all-or-nothing). Users see an error banner even if 6 of 7 series loaded fine.
-
-**Optimized:** Use `Promise.allSettled` to show whichever series succeeded, and
-display a targeted warning only for the failed series.
-
-**Trade-off:** Requires per-series loading/error state — significantly more complex.
-Implement only if the FRED API proves unreliable in production.
-
-### 3. Lazy Loading Hook Modules
-
-**Current:** All hook code is bundled upfront regardless of which tabs the user visits.
-
-**Optimized:** Code-split each domain hook with dynamic imports so the JavaScript
-for unused tabs is never downloaded.
-
-**When:** Consider if the Next.js build warns about bundle size or if Lighthouse
-flags large JS payloads.
+3. Review the beginner tutorials in the plan file (`/root/.claude/plans/lovely-squishing-muffin.md`)
 
 ---
 
