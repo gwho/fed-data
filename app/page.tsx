@@ -23,23 +23,7 @@ import {
   useMarketIndicesData,
   useKeyIndicatorsData,
 } from './hooks';
-
-function ChartCard({ title, children, loading }: { title: string; children: React.ReactNode; loading?: boolean }) {
-  return (
-    <div className="bg-[#D9D9D9] p-4 rounded-lg">
-      <h2 className="text-2xl font-bold text-black mb-4 font-[family-name:var(--font-geist-sans)]">
-        {title}
-      </h2>
-      <div className="bg-white rounded min-h-[400px] flex items-center justify-center">
-        {loading ? (
-          <div className="text-gray-500">Loading data...</div>
-        ) : (
-          children
-        )}
-      </div>
-    </div>
-  );
-}
+import ChartCard from './components/ChartCard';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState('key-indicators');
@@ -66,7 +50,7 @@ export default function Home() {
 
         {activeSection === 'key-indicators' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="CPI - last three years" loading={keyIndicators.loading}>
+            <ChartCard title="CPI - last three years" loading={keyIndicators.loading} error={keyIndicators.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={keyIndicators.data.cpi} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -86,7 +70,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Infra-Annual Labor Statistics: Unemployment Rate Total" loading={keyIndicators.loading}>
+            <ChartCard title="Infra-Annual Labor Statistics: Unemployment Rate Total" loading={keyIndicators.loading} error={keyIndicators.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={keyIndicators.data.unemployment} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -106,7 +90,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Real GDP Growth Rate (Year-over-Year)" loading={keyIndicators.loading}>
+            <ChartCard title="Real GDP Growth Rate (Year-over-Year)" loading={keyIndicators.loading} error={keyIndicators.error}>
               {keyIndicators.data.gdp.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
                   <LineChart data={keyIndicators.data.gdp} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
@@ -131,7 +115,7 @@ export default function Home() {
               )}
             </ChartCard>
 
-            <ChartCard title="S&P 500 Stock Market Index" loading={keyIndicators.loading}>
+            <ChartCard title="S&P 500 Stock Market Index" loading={keyIndicators.loading} error={keyIndicators.error}>
               {keyIndicators.data.sp500.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
                   <LineChart data={keyIndicators.data.sp500} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
@@ -159,7 +143,7 @@ export default function Home() {
 
         {activeSection === 'inflation' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Headline vs Core CPI" loading={inflation.loading}>
+            <ChartCard title="Headline vs Core CPI" loading={inflation.loading} error={inflation.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={inflation.data.coreCpi.map((d, i) => ({
@@ -194,7 +178,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="PCE Inflation Measures" loading={inflation.loading}>
+            <ChartCard title="PCE Inflation Measures" loading={inflation.loading} error={inflation.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={inflation.data.pce.map((d, i) => ({
@@ -229,7 +213,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="CPI by Category: Food & Energy" loading={inflation.loading}>
+            <ChartCard title="CPI by Category: Food & Energy" loading={inflation.loading} error={inflation.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={inflation.data.foodCpi.map((d, i) => ({
@@ -264,7 +248,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="CPI by Category: Housing & Medical" loading={inflation.loading}>
+            <ChartCard title="CPI by Category: Housing & Medical" loading={inflation.loading} error={inflation.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={inflation.data.housingCpi.map((d, i) => ({
@@ -303,7 +287,7 @@ export default function Home() {
 
         {activeSection === 'employment' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Unemployment Rate vs Labor Force Participation" loading={employment.loading}>
+            <ChartCard title="Unemployment Rate vs Labor Force Participation" loading={employment.loading} error={employment.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={keyIndicators.data.unemployment.map((d, i) => ({
@@ -341,7 +325,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Total Nonfarm Payrolls" loading={employment.loading}>
+            <ChartCard title="Total Nonfarm Payrolls" loading={employment.loading} error={employment.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={employment.data.payrolls} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -361,7 +345,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Initial Unemployment Claims (Weekly)" loading={employment.loading}>
+            <ChartCard title="Initial Unemployment Claims (Weekly)" loading={employment.loading} error={employment.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={employment.data.initialClaims} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -381,7 +365,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Average Hourly Earnings (Private Sector)" loading={employment.loading}>
+            <ChartCard title="Average Hourly Earnings (Private Sector)" loading={employment.loading} error={employment.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={employment.data.hourlyEarnings} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -405,7 +389,7 @@ export default function Home() {
 
         {activeSection === 'economic-growth' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Real vs Nominal GDP Growth Rate" loading={economicGrowth.loading}>
+            <ChartCard title="Real vs Nominal GDP Growth Rate" loading={economicGrowth.loading} error={economicGrowth.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={economicGrowth.data.realGdp.map((d, i) => ({
@@ -442,7 +426,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Industrial Production Index" loading={economicGrowth.loading}>
+            <ChartCard title="Industrial Production Index" loading={economicGrowth.loading} error={economicGrowth.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={economicGrowth.data.industrialProd} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -463,7 +447,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Advance Monthly Retail Sales" loading={economicGrowth.loading}>
+            <ChartCard title="Advance Monthly Retail Sales" loading={economicGrowth.loading} error={economicGrowth.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={economicGrowth.data.retailSales} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -486,7 +470,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Total Capacity Utilization" loading={economicGrowth.loading}>
+            <ChartCard title="Total Capacity Utilization" loading={economicGrowth.loading} error={economicGrowth.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={economicGrowth.data.capacityUtil} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -511,7 +495,7 @@ export default function Home() {
 
         {activeSection === 'exchange-rates' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Trade-Weighted U.S. Dollar Index (Broad)" loading={exchangeRates.loading}>
+            <ChartCard title="Trade-Weighted U.S. Dollar Index (Broad)" loading={exchangeRates.loading} error={exchangeRates.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={exchangeRates.data.dollarIndex} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -537,7 +521,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Major Currency Pairs vs USD" loading={exchangeRates.loading}>
+            <ChartCard title="Major Currency Pairs vs USD" loading={exchangeRates.loading} error={exchangeRates.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={exchangeRates.data.eur.map((d, i) => ({
@@ -593,7 +577,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Emerging Market Currencies vs USD" loading={exchangeRates.loading}>
+            <ChartCard title="Emerging Market Currencies vs USD" loading={exchangeRates.loading} error={exchangeRates.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={exchangeRates.data.cny.map((d, i) => ({
@@ -649,7 +633,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Commodity Currencies vs USD" loading={exchangeRates.loading}>
+            <ChartCard title="Commodity Currencies vs USD" loading={exchangeRates.loading} error={exchangeRates.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={exchangeRates.data.cad.map((d, i) => ({
@@ -689,7 +673,7 @@ export default function Home() {
 
         {activeSection === 'housing' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="S&P/Case-Shiller U.S. National Home Price Index" loading={housing.loading}>
+            <ChartCard title="S&P/Case-Shiller U.S. National Home Price Index" loading={housing.loading} error={housing.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={housing.data.homePrice} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -715,7 +699,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Housing Starts vs Building Permits" loading={housing.loading}>
+            <ChartCard title="Housing Starts vs Building Permits" loading={housing.loading} error={housing.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={housing.data.housingStarts.map((d, i) => ({
@@ -757,7 +741,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="30-Year Mortgage Rate vs Housing Affordability" loading={housing.loading}>
+            <ChartCard title="30-Year Mortgage Rate vs Housing Affordability" loading={housing.loading} error={housing.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={housing.data.mortgageRate.map((d, i) => ({
@@ -813,7 +797,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="New vs Existing Home Sales" loading={housing.loading}>
+            <ChartCard title="New vs Existing Home Sales" loading={housing.loading} error={housing.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart
                   data={housing.data.newHomeSales.map((d, i) => ({
@@ -859,7 +843,7 @@ export default function Home() {
         {activeSection === 'consumer-spending' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
             {/* Chart 1: Personal Consumption Expenditures by Type */}
-            <ChartCard title="Personal Consumption Expenditures by Category" loading={consumerSpending.loading}>
+            <ChartCard title="Personal Consumption Expenditures by Category" loading={consumerSpending.loading} error={consumerSpending.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={consumerSpending.data.pceChart} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -914,7 +898,7 @@ export default function Home() {
             </ChartCard>
 
             {/* Chart 2: Retail Sales by Category */}
-            <ChartCard title="Retail Sales by Category" loading={consumerSpending.loading}>
+            <ChartCard title="Retail Sales by Category" loading={consumerSpending.loading} error={consumerSpending.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={consumerSpending.data.retailChart} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -967,7 +951,7 @@ export default function Home() {
             </ChartCard>
 
             {/* Chart 3: Personal Saving Rate vs Disposable Income */}
-            <ChartCard title="Personal Saving Rate vs Disposable Income" loading={consumerSpending.loading}>
+            <ChartCard title="Personal Saving Rate vs Disposable Income" loading={consumerSpending.loading} error={consumerSpending.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={consumerSpending.data.savingsChart} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1025,7 +1009,7 @@ export default function Home() {
             </ChartCard>
 
             {/* Chart 4: Consumer Sentiment & Confidence Indices */}
-            <ChartCard title="Consumer Sentiment & Confidence Indices" loading={consumerSpending.loading}>
+            <ChartCard title="Consumer Sentiment & Confidence Indices" loading={consumerSpending.loading} error={consumerSpending.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={consumerSpending.data.sentimentChart} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1086,7 +1070,7 @@ export default function Home() {
 
         {activeSection === 'market-indices' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Equity Index Levels" loading={marketIndices.loading}>
+            <ChartCard title="Equity Index Levels" loading={marketIndices.loading} error={marketIndices.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={marketIndices.data.equityIndices} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1137,7 +1121,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Volatility Index (VIX)" loading={marketIndices.loading}>
+            <ChartCard title="Volatility Index (VIX)" loading={marketIndices.loading} error={marketIndices.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={marketIndices.data.vix} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1167,7 +1151,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Corporate Bond Spreads (vs 10Y Treasury)" loading={marketIndices.loading}>
+            <ChartCard title="Corporate Bond Spreads (vs 10Y Treasury)" loading={marketIndices.loading} error={marketIndices.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={marketIndices.data.creditSpread} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -1209,7 +1193,7 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Market Breadth: NYSE Composite vs S&P 500" loading={marketIndices.loading}>
+            <ChartCard title="Market Breadth: NYSE Composite vs S&P 500" loading={marketIndices.loading} error={marketIndices.error}>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={marketIndices.data.breadth} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" />
