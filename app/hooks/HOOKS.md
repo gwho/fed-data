@@ -792,14 +792,81 @@ results[0].someField  // TypeScript knows the type
 
 ---
 
+## Future Refactor Options
+
+### Extract Duplicated Error Handling
+
+All 8 domain hooks share an identical try/catch/finally pattern (~50 lines each,
+~400 lines total). A `useAsyncData` utility could eliminate this duplication:
+
+```typescript
+// app/hooks/shared/useAsyncData.ts (not yet implemented)
+export function useAsyncData<T>(
+  fetcher: () => Promise<T>,
+  isActive: boolean,
+  errorMessage: string
+): DomainHookResult<T> {
+  const [data, setData] = useState<T>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fetcher();
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error(errorMessage));
+        console.error(errorMessage, err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [isActive, fetcher, errorMessage]);
+
+  return { data, loading, error };
+}
+```
+
+**Usage would look like:**
+
+```typescript
+export function useInflationData(isActive: boolean) {
+  const { oneYearAgo } = useDateRange();
+  const { formatMonthly } = useDataFormatter();
+
+  return useAsyncData(
+    async () => {
+      const [coreCpi, pce, ...] = await Promise.all([...]);
+      return { coreCpi: formatMonthly(coreCpi), pce: formatMonthly(pce), ... };
+    },
+    isActive,
+    'Failed to load inflation data'
+  );
+}
+```
+
+**Why not yet implemented:**
+- Each hook is a self-contained file — the fetch lifecycle is visible at a glance
+- Abstraction would require navigating to `useAsyncData` to understand error flow
+- Current repetition is intentional for debuggability and onboarding clarity
+- Reconsider when hook count exceeds 12 or individual hooks become more complex
+
+---
+
 ## Questions?
 
 If you're stuck:
 1. Check the existing hooks for examples (start with `useInflationData` — it's the reference implementation)
 2. Read the tests to understand expected behavior
-3. Review the beginner tutorials in the plan file (`/root/.claude/plans/lovely-squishing-muffin.md`)
+3. Review the beginner tutorials in [`TUTORIALS.md`](./TUTORIALS.md)
 
 ---
 
-*Last Updated: Phase 2.5 — Documentation & Education*
+*Last Updated: Phase 2.5 Task 6 — Code Quality*
 *See individual hook files for detailed JSDoc comments and usage examples*
