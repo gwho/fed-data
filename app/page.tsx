@@ -24,6 +24,8 @@ import {
   useKeyIndicatorsData,
 } from './hooks';
 import ChartCard from './components/ChartCard';
+import { LineChartCard } from './components/charts';
+import { CHART_COLORS } from './constants/chartConfig';
 
 export default function Home() {
   const [activeSection, setActiveSection] = useState('key-indicators');
@@ -50,238 +52,100 @@ export default function Home() {
 
         {activeSection === 'key-indicators' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="CPI - last three years" loading={keyIndicators.loading} error={keyIndicators.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={keyIndicators.data.cpi} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={['dataMin - 10', 'dataMax + 10']} />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#0d9488"
-                    strokeWidth={2}
-                    name="CPI Index"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="Infra-Annual Labor Statistics: Unemployment Rate Total" loading={keyIndicators.loading} error={keyIndicators.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={keyIndicators.data.unemployment} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[3, 5]} />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#f59e0b"
-                    strokeWidth={2}
-                    name="Unemployment Rate (%)"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="Real GDP Growth Rate (Year-over-Year)" loading={keyIndicators.loading} error={keyIndicators.error}>
-              {keyIndicators.data.gdp.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={keyIndicators.data.gdp} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis domain={[0, 5]} />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#16a34a"
-                      strokeWidth={3}
-                      name="GDP Growth (%)"
-                      dot={{ r: 5 }}
-                    />
-                    <ReferenceLine y={2} stroke="#9ca3af" strokeDasharray="3 3" label="2% Trend" />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="text-gray-500">No data available</div>
-              )}
-            </ChartCard>
-
-            <ChartCard title="S&P 500 Stock Market Index" loading={keyIndicators.loading} error={keyIndicators.error}>
-              {keyIndicators.data.sp500.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={keyIndicators.data.sp500} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis domain={['dataMin - 200', 'dataMax + 200']} />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#3b82f6"
-                      strokeWidth={2}
-                      name="S&P 500"
-                      dot={{ r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="text-gray-500">No data available</div>
-              )}
-            </ChartCard>
+            <LineChartCard
+              title="CPI - last three years"
+              data={keyIndicators.data.cpi}
+              series={[{ dataKey: 'value', name: 'CPI Index', color: CHART_COLORS.TEAL }]}
+              domain={['dataMin - 10', 'dataMax + 10']}
+              loading={keyIndicators.loading}
+              error={keyIndicators.error}
+            />
+            <LineChartCard
+              title="Infra-Annual Labor Statistics: Unemployment Rate Total"
+              data={keyIndicators.data.unemployment}
+              series={[{ dataKey: 'value', name: 'Unemployment Rate (%)', color: CHART_COLORS.AMBER }]}
+              domain={[3, 5]}
+              loading={keyIndicators.loading}
+              error={keyIndicators.error}
+            />
+            <LineChartCard
+              title="Real GDP Growth Rate (Year-over-Year)"
+              data={keyIndicators.data.gdp}
+              series={[{ dataKey: 'value', name: 'GDP Growth (%)', color: CHART_COLORS.GREEN, strokeWidth: 3, dotRadius: 5 }]}
+              domain={[0, 5]}
+              referenceLines={[{ y: 2, label: '2% Trend', dashed: true }]}
+              loading={keyIndicators.loading}
+              error={keyIndicators.error}
+            />
+            <LineChartCard
+              title="S&P 500 Stock Market Index"
+              data={keyIndicators.data.sp500}
+              series={[{ dataKey: 'value', name: 'S&P 500', color: CHART_COLORS.BLUE }]}
+              domain={['dataMin - 200', 'dataMax + 200']}
+              loading={keyIndicators.loading}
+              error={keyIndicators.error}
+            />
           </div>
         )}
 
         {activeSection === 'inflation' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Headline vs Core CPI" loading={inflation.loading} error={inflation.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={inflation.data.coreCpi.map((d, i) => ({
-                    date: d.date,
-                    core: d.value,
-                    headline: keyIndicators.data.unemployment[i]?.value ? parseFloat(d.value.toString()) + 5 : d.value,
-                  }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="headline"
-                    stroke="#2563eb"
-                    strokeWidth={2}
-                    name="Headline CPI"
-                    dot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="core"
-                    stroke="#dc2626"
-                    strokeWidth={2}
-                    name="Core CPI"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="PCE Inflation Measures" loading={inflation.loading} error={inflation.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={inflation.data.pce.map((d, i) => ({
-                    date: d.date,
-                    pce: d.value,
-                    corePce: inflation.data.corePce[i]?.value || 0,
-                  }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="pce"
-                    stroke="#16a34a"
-                    strokeWidth={2}
-                    name="PCE"
-                    dot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="corePce"
-                    stroke="#9333ea"
-                    strokeWidth={2}
-                    name="Core PCE"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="CPI by Category: Food & Energy" loading={inflation.loading} error={inflation.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={inflation.data.foodCpi.map((d, i) => ({
-                    date: d.date,
-                    food: d.value,
-                    energy: inflation.data.energyCpi[i]?.value || 0,
-                  }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="food"
-                    stroke="#16a34a"
-                    strokeWidth={2}
-                    name="Food CPI"
-                    dot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="energy"
-                    stroke="#f59e0b"
-                    strokeWidth={2}
-                    name="Energy CPI"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="CPI by Category: Housing & Medical" loading={inflation.loading} error={inflation.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={inflation.data.housingCpi.map((d, i) => ({
-                    date: d.date,
-                    housing: d.value,
-                    medical: inflation.data.medicalCpi[i]?.value || 0,
-                  }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="housing"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    name="Housing CPI"
-                    dot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="medical"
-                    stroke="#ec4899"
-                    strokeWidth={2}
-                    name="Medical Care CPI"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
+            <LineChartCard
+              title="Headline vs Core CPI"
+              data={inflation.data.coreCpi.map((d, i) => ({
+                date: d.date,
+                core: d.value,
+                headline: keyIndicators.data.unemployment[i]?.value ? parseFloat(d.value.toString()) + 5 : d.value,
+              }))}
+              series={[
+                { dataKey: 'headline', name: 'Headline CPI', color: '#2563eb' },
+                { dataKey: 'core', name: 'Core CPI', color: CHART_COLORS.RED },
+              ]}
+              loading={inflation.loading}
+              error={inflation.error}
+            />
+            <LineChartCard
+              title="PCE Inflation Measures"
+              data={inflation.data.pce.map((d, i) => ({
+                date: d.date,
+                pce: d.value,
+                corePce: inflation.data.corePce[i]?.value || 0,
+              }))}
+              series={[
+                { dataKey: 'pce', name: 'PCE', color: CHART_COLORS.GREEN },
+                { dataKey: 'corePce', name: 'Core PCE', color: CHART_COLORS.VIOLET },
+              ]}
+              loading={inflation.loading}
+              error={inflation.error}
+            />
+            <LineChartCard
+              title="CPI by Category: Food & Energy"
+              data={inflation.data.foodCpi.map((d, i) => ({
+                date: d.date,
+                food: d.value,
+                energy: inflation.data.energyCpi[i]?.value || 0,
+              }))}
+              series={[
+                { dataKey: 'food', name: 'Food CPI', color: CHART_COLORS.GREEN },
+                { dataKey: 'energy', name: 'Energy CPI', color: CHART_COLORS.AMBER },
+              ]}
+              loading={inflation.loading}
+              error={inflation.error}
+            />
+            <LineChartCard
+              title="CPI by Category: Housing & Medical"
+              data={inflation.data.housingCpi.map((d, i) => ({
+                date: d.date,
+                housing: d.value,
+                medical: inflation.data.medicalCpi[i]?.value || 0,
+              }))}
+              series={[
+                { dataKey: 'housing', name: 'Housing CPI', color: CHART_COLORS.BLUE },
+                { dataKey: 'medical', name: 'Medical Care CPI', color: CHART_COLORS.PINK },
+              ]}
+              loading={inflation.loading}
+              error={inflation.error}
+            />
           </div>
         )}
 
@@ -389,137 +253,63 @@ export default function Home() {
 
         {activeSection === 'economic-growth' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Real vs Nominal GDP Growth Rate" loading={economicGrowth.loading} error={economicGrowth.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={economicGrowth.data.realGdp.map((d, i) => ({
-                    date: d.date,
-                    real: d.value,
-                    nominal: economicGrowth.data.nominalGdp[i]?.value || 0,
-                  }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 8]} />
-                  <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
-                  <Legend />
-                  <ReferenceLine y={2} stroke="#9ca3af" strokeDasharray="3 3" label="2% Target" />
-                  <Line
-                    type="monotone"
-                    dataKey="real"
-                    stroke="#16a34a"
-                    strokeWidth={3}
-                    name="Real GDP Growth (%)"
-                    dot={{ r: 5 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="nominal"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    name="Nominal GDP Growth (%)"
-                    dot={{ r: 4 }}
-                    strokeDasharray="5 5"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="Industrial Production Index" loading={economicGrowth.loading} error={economicGrowth.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={economicGrowth.data.industrialProd} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={['dataMin - 1', 'dataMax + 1']} />
-                  <Tooltip formatter={(value) => `${Number(value).toFixed(1)}`} />
-                  <Legend />
-                  <ReferenceLine y={100} stroke="#9ca3af" strokeDasharray="3 3" label="2017 Base" />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#8b5cf6"
-                    strokeWidth={2}
-                    name="Industrial Production (2017=100)"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="Advance Monthly Retail Sales" loading={economicGrowth.loading} error={economicGrowth.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={economicGrowth.data.retailSales} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis 
-                    domain={['dataMin - 10000', 'dataMax + 10000']} 
-                    tickFormatter={(v) => `$${(v/1000).toFixed(0)}B`} 
-                  />
-                  <Tooltip formatter={(value) => value !== undefined ? `$${(Number(value)/1000).toFixed(1)}B` : ''} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#f59e0b"
-                    strokeWidth={2}
-                    name="Retail Sales"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="Total Capacity Utilization" loading={economicGrowth.loading} error={economicGrowth.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={economicGrowth.data.capacityUtil} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[75, 85]} />
-                  <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
-                  <Legend />
-                  <ReferenceLine y={80} stroke="#ef4444" strokeDasharray="3 3" label="80% Threshold" />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#0d9488"
-                    strokeWidth={2}
-                    name="Capacity Utilization (%)"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
+            <LineChartCard
+              title="Real vs Nominal GDP Growth Rate"
+              data={economicGrowth.data.realGdp.map((d, i) => ({
+                date: d.date,
+                real: d.value,
+                nominal: economicGrowth.data.nominalGdp[i]?.value || 0,
+              }))}
+              series={[
+                { dataKey: 'real', name: 'Real GDP Growth (%)', color: CHART_COLORS.GREEN, strokeWidth: 3, dotRadius: 5 },
+                { dataKey: 'nominal', name: 'Nominal GDP Growth (%)', color: CHART_COLORS.BLUE, strokeDasharray: '5 5' },
+              ]}
+              domain={[0, 8]}
+              referenceLines={[{ y: 2, label: '2% Target', dashed: true }]}
+              loading={economicGrowth.loading}
+              error={economicGrowth.error}
+            />
+            <LineChartCard
+              title="Industrial Production Index"
+              data={economicGrowth.data.industrialProd}
+              series={[{ dataKey: 'value', name: 'Industrial Production (2017=100)', color: CHART_COLORS.PURPLE }]}
+              domain={['dataMin - 1', 'dataMax + 1']}
+              referenceLines={[{ y: 100, label: '2017 Base', dashed: true }]}
+              loading={economicGrowth.loading}
+              error={economicGrowth.error}
+            />
+            <LineChartCard
+              title="Advance Monthly Retail Sales"
+              data={economicGrowth.data.retailSales}
+              series={[{ dataKey: 'value', name: 'Retail Sales', color: CHART_COLORS.AMBER }]}
+              domain={['dataMin - 10000', 'dataMax + 10000']}
+              yTickFormatter={(v) => `$${(v/1000).toFixed(0)}B`}
+              loading={economicGrowth.loading}
+              error={economicGrowth.error}
+            />
+            <LineChartCard
+              title="Total Capacity Utilization"
+              data={economicGrowth.data.capacityUtil}
+              series={[{ dataKey: 'value', name: 'Capacity Utilization (%)', color: CHART_COLORS.TEAL }]}
+              domain={[75, 85]}
+              referenceLines={[{ y: 80, label: '80% Threshold', dashed: true, color: CHART_COLORS.SCARLET }]}
+              loading={economicGrowth.loading}
+              error={economicGrowth.error}
+            />
           </div>
         )}
 
         {activeSection === 'exchange-rates' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="Trade-Weighted U.S. Dollar Index (Broad)" loading={exchangeRates.loading} error={exchangeRates.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={exchangeRates.data.dollarIndex} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={['dataMin - 2', 'dataMax + 2']} />
-                  <Tooltip formatter={(value) => `${Number(value).toFixed(2)}`} />
-                  <Legend />
-                  <ReferenceLine 
-                    y={120} 
-                    stroke="#9ca3af" 
-                    strokeDasharray="3 3" 
-                    label="Historical Average" 
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#3b82f6"
-                    strokeWidth={3}
-                    name="Dollar Index"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
+            <LineChartCard
+              title="Trade-Weighted U.S. Dollar Index (Broad)"
+              data={exchangeRates.data.dollarIndex}
+              series={[{ dataKey: 'value', name: 'Dollar Index', color: CHART_COLORS.BLUE, strokeWidth: 3 }]}
+              domain={['dataMin - 2', 'dataMax + 2']}
+              referenceLines={[{ y: 120, label: 'Historical Average', dashed: true }]}
+              loading={exchangeRates.loading}
+              error={exchangeRates.error}
+            />
 
             <ChartCard title="Major Currency Pairs vs USD" loading={exchangeRates.loading} error={exchangeRates.error}>
               <ResponsiveContainer width="100%" height={400}>
@@ -633,113 +423,53 @@ export default function Home() {
               </ResponsiveContainer>
             </ChartCard>
 
-            <ChartCard title="Commodity Currencies vs USD" loading={exchangeRates.loading} error={exchangeRates.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={exchangeRates.data.cad.map((d, i) => ({
-                    date: d.date,
-                    cad: d.value,
-                    aud: exchangeRates.data.aud[i]?.value || 0,
-                  }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[1.2, 1.7]} />
-                  <Tooltip formatter={(value) => `$${Number(value).toFixed(4)}`} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="cad"
-                    stroke="#dc2626"
-                    strokeWidth={2}
-                    name="CAD/USD"
-                    dot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="aud"
-                    stroke="#16a34a"
-                    strokeWidth={2}
-                    name="AUD/USD"
-                    dot={{ r: 4 }}
-                  />
-                  <ReferenceLine y={1.35} stroke="#9ca3af" strokeDasharray="3 3" label="Parity Zone" />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
+            <LineChartCard
+              title="Commodity Currencies vs USD"
+              data={exchangeRates.data.cad.map((d, i) => ({
+                date: d.date,
+                cad: d.value,
+                aud: exchangeRates.data.aud[i]?.value || 0,
+              }))}
+              series={[
+                { dataKey: 'cad', name: 'CAD/USD', color: CHART_COLORS.RED },
+                { dataKey: 'aud', name: 'AUD/USD', color: CHART_COLORS.GREEN },
+              ]}
+              domain={[1.2, 1.7]}
+              referenceLines={[{ y: 1.35, label: 'Parity Zone', dashed: true }]}
+              loading={exchangeRates.loading}
+              error={exchangeRates.error}
+            />
           </div>
         )}
 
         {activeSection === 'housing' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-[2100px]">
-            <ChartCard title="S&P/Case-Shiller U.S. National Home Price Index" loading={housing.loading} error={housing.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={housing.data.homePrice} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={['dataMin - 5', 'dataMax + 5']} />
-                  <Tooltip formatter={(value) => `${Number(value).toFixed(2)}`} />
-                  <Legend />
-                  <ReferenceLine 
-                    y={300} 
-                    stroke="#9ca3af" 
-                    strokeDasharray="3 3" 
-                    label="2023 Base" 
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#8b5cf6"
-                    strokeWidth={3}
-                    name="Home Price Index (2000=100)"
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="Housing Starts vs Building Permits" loading={housing.loading} error={housing.error}>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={housing.data.housingStarts.map((d, i) => ({
-                    date: d.date,
-                    starts: d.value,
-                    permits: housing.data.buildingPermits[i]?.value || 0,
-                  }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[1200, 1600]} tickFormatter={(v) => `${(v/1000).toFixed(1)}M`} />
-                  <Tooltip formatter={(value) => `${(Number(value)/1000).toFixed(1)}M units`} />
-                  <Legend />
-                  <ReferenceLine 
-                    y={1400} 
-                    stroke="#9ca3af" 
-                    strokeDasharray="3 3" 
-                    label="Historical Average" 
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="starts"
-                    stroke="#0ea5e9"
-                    strokeWidth={2}
-                    name="Housing Starts"
-                    dot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="permits"
-                    stroke="#f97316"
-                    strokeWidth={2}
-                    name="Building Permits"
-                    dot={{ r: 4 }}
-                    strokeDasharray="5 5"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartCard>
+            <LineChartCard
+              title="S&P/Case-Shiller U.S. National Home Price Index"
+              data={housing.data.homePrice}
+              series={[{ dataKey: 'value', name: 'Home Price Index (2000=100)', color: CHART_COLORS.PURPLE, strokeWidth: 3 }]}
+              domain={['dataMin - 5', 'dataMax + 5']}
+              referenceLines={[{ y: 300, label: '2023 Base', dashed: true }]}
+              loading={housing.loading}
+              error={housing.error}
+            />
+            <LineChartCard
+              title="Housing Starts vs Building Permits"
+              data={housing.data.housingStarts.map((d, i) => ({
+                date: d.date,
+                starts: d.value,
+                permits: housing.data.buildingPermits[i]?.value || 0,
+              }))}
+              series={[
+                { dataKey: 'starts', name: 'Housing Starts', color: CHART_COLORS.CYAN },
+                { dataKey: 'permits', name: 'Building Permits', color: CHART_COLORS.ORANGE, strokeDasharray: '5 5' },
+              ]}
+              domain={[1200, 1600]}
+              yTickFormatter={(v) => `${(v/1000).toFixed(1)}M`}
+              referenceLines={[{ y: 1400, label: 'Historical Average', dashed: true }]}
+              loading={housing.loading}
+              error={housing.error}
+            />
 
             <ChartCard title="30-Year Mortgage Rate vs Housing Affordability" loading={housing.loading} error={housing.error}>
               <ResponsiveContainer width="100%" height={400}>
