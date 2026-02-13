@@ -642,6 +642,25 @@ const [series1, series2, series3] = await Promise.all([
 
 **Trade-off:** All-or-nothing. If one series fails, the whole section errors. Future optimization: `Promise.allSettled` for partial data display.
 
+### Memoization Audit
+
+All hooks audited for correct `useMemo` / `useCallback` usage (Phase 2.5):
+
+| Check | File | Result |
+|-------|------|--------|
+| `useDateRange` uses `useMemo` with `[]` deps | `shared/useDateRange.ts` | ✅ Pass |
+| `formatMonthly` uses `useCallback` with `[]` deps | `shared/useDataFormatter.ts` | ✅ Pass |
+| `formatQuarterly` uses `useCallback` with `[]` deps | `shared/useDataFormatter.ts` | ✅ Pass |
+| `formatIsoDate` uses `useCallback` with `[]` deps | `shared/useDataFormatter.ts` | ✅ Pass |
+| All domain hooks include formatters in `useEffect` deps | All 8 domain hooks | ✅ Pass |
+| All domain hooks include date ranges in `useEffect` deps | All 8 domain hooks | ✅ Pass |
+| No unnecessary memoization of primitive values | All files | ✅ Pass |
+
+**Why this matters:** Without `useMemo`/`useCallback` on `useDateRange` and
+`useDataFormatter`, every render creates a new object/function reference. Those
+new references appear as changed dependencies to domain hooks' `useEffect`,
+triggering an infinite fetch → render → fetch loop.
+
 ### Caching
 
 All hooks use `getFredSeriesCached` which implements:
