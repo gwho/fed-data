@@ -352,6 +352,108 @@ try {
 
 ---
 
+## Common Pitfalls
+
+### Pitfall 1: Calling the Hook Without Checking `isActive`
+
+❌ **Wrong:**
+```typescript
+// Always fires — 7 unnecessary API calls on every page load
+const employment = useEmploymentData(true);
+```
+
+✅ **Correct:**
+```typescript
+const [activeSection, setActiveSection] = useState('key-indicators');
+const employment = useEmploymentData(activeSection === 'employment');
+```
+
+**Why it matters:** Passing `true` unconditionally fires all 7 lazy hooks on page
+load, regardless of which section the user actually opens.
+
+---
+
+### Pitfall 2: Accessing `data` Before Loading Completes
+
+❌ **Wrong:**
+```typescript
+const employment = useEmploymentData(isActive);
+// payrolls is [] until fetch completes — this throws
+const first = employment.data.payrolls[0].value;
+```
+
+✅ **Correct:**
+```typescript
+if (employment.loading) return <Spinner />;
+if (employment.error) return <ErrorMessage error={employment.error} />;
+const first = employment.data.payrolls[0]?.value;
+```
+
+**Why it matters:** `data` starts as `{ payrolls: [], laborForce: [], ... }`.
+Array items don't exist until the fetch resolves. Optional chaining (`?.`) is a
+safety net, not a substitute for checking `loading` first.
+
+---
+
+### Pitfall 3: Missing Hook Result in `useEffect` Dependencies
+
+❌ **Wrong:**
+```typescript
+const employment = useEmploymentData(isActive);
+useEffect(() => {
+  doSomethingWith(employment.data);
+}, []);  // Stale closure — never re-runs when data arrives
+```
+
+✅ **Correct:**
+```typescript
+useEffect(() => {
+  doSomethingWith(employment.data);
+}, [employment.data]);
+```
+
+**Why it matters:** An empty deps array captures the initial (empty) `data` and
+never re-runs. The effect sees `payrolls: []` forever.
+
+---
+
+### Pitfall 4: Expecting `isActive` Toggle to Skip the Cache
+
+```typescript
+// User visits Employment → Inflation → Employment:
+// First visit:  fetch fires, data cached in memory
+// Second visit: isActive goes false → true again → loadData() called again
+// BUT: getFredSeriesCached returns instantly from cache — no network round-trip
+```
+
+**What this means:** Re-triggering the effect on `isActive` change is safe.
+The cache layer in `getFredSeriesCached` ensures repeated calls are instant.
+
+---
+
+### Pitfall 5: Using Hook Outside a `'use client'` Component
+
+❌ **Wrong:**
+```typescript
+// app/dashboard/page.tsx  ← Server Component by default in Next.js App Router
+import { useEmploymentData } from '@/app/hooks';
+
+export default function Page() {
+  const employment = useEmploymentData(true);  // Error: hooks not allowed here
+}
+```
+
+✅ **Correct:**
+```typescript
+'use client';
+import { useEmploymentData } from '@/app/hooks';
+```
+
+**Why it matters:** All 8 domain hooks use `useState` and `useEffect`, which
+require a browser runtime. The `'use client'` directive is required.
+
+---
+
 ## Comprehension Questions
 
 **Q1:** If you remove `useCallback` from `formatMonthly`, what happens? Trace through
