@@ -1,5 +1,6 @@
 import { fredCache } from './fredCache';
 import { fetchWithCoalescing, createFredCacheKey } from './requestCoalescer';
+import { FredSeriesCode } from '@/app/constants/fredSeries';
 
 const FRED_API_BASE = 'https://api.stlouisfed.org/fred';
 
@@ -150,7 +151,7 @@ export async function getFredSeries(
  * const [data1, data2, data3] = await Promise.all([p1, p2, p3]);
  * // data1 === data2 === data3, only 1 API call made
  */
-export async function getFredSeriesCached(seriesId: string, startDate?: string): Promise<FredSeriesData[]> {
+export async function getFredSeriesCached(seriesId: FredSeriesCode, startDate?: string): Promise<FredSeriesData[]> {
   // Step 1: Check cache first (fastest path)
   const cached = fredCache.get(seriesId, startDate);
   if (cached) {
